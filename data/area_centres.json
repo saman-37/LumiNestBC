@@ -1,0 +1,17 @@
+{
+  "_comment": "Approximate area centres used by the voice-line matcher to turn 'near X' into coordinates. Owner: Design/data (Person 4).",
+  "areas": [
+    { "name": "Vancouver Downtown Eastside", "aliases": ["downtown eastside", "dtes", "main and hastings", "oppenheimer park"], "lat": 49.2810, "lng": -123.0990 },
+    { "name": "Vancouver Downtown", "aliases": ["downtown vancouver", "granville", "waterfront"], "lat": 49.2827, "lng": -123.1207 },
+    { "name": "Mount Pleasant", "aliases": ["main street", "broadway and main"], "lat": 49.2630, "lng": -123.1000 },
+    { "name": "Surrey Whalley", "aliases": ["whalley", "surrey central", "king george"], "lat": 49.1906, "lng": -122.8490 },
+    { "name": "Surrey Newton", "aliases": ["newton"], "lat": 49.1328, "lng": -122.8466 },
+    { "name": "Burnaby Metrotown", "aliases": ["metrotown", "burnaby"], "lat": 49.2276, "lng": -123.0076 },
+    { "name": "New Westminster", "aliases": ["new west", "columbia street"], "lat": 49.2057, "lng": -122.9110 },
+    { "name": "Richmond Centre", "aliases": ["richmond"], "lat": 49.1666, "lng": -123.1364 },
+    { "name": "North Vancouver Lonsdale", "aliases": ["north van", "north vancouver", "lonsdale"], "lat": 49.3100, "lng": -123.0740 },
+    { "name": "Coquitlam Centre", "aliases": ["coquitlam", "tri-cities", "port coquitlam"], "lat": 49.2780, "lng": -122.7990 },
+    { "name": "Langley City", "aliases": ["langley"], "lat": 49.1044, "lng": -122.6600 },
+    { "name": "Maple Ridge", "aliases": ["haney"], "lat": 49.2190, "lng": -122.6010 }
+  ]
+}

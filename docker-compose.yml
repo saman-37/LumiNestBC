@@ -1,0 +1,25 @@
+# Local Postgres + TimescaleDB. Production uses Tiger Data cloud instead.
+# The schema is applied automatically the first time the volume is created.
+# After changing schema.sql: `docker compose down -v && docker compose up -d` (wipes data).
+name: luminestbc
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: luminest
+      POSTGRES_PASSWORD: luminest
+      POSTGRES_DB: luminestbc
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./backend/sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U luminest -d luminestbc"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:

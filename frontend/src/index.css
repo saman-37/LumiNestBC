@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+/* Design tokens. Dark by default; warm amber "light" = open beds. Text pairs are >= 4.5:1. */
+@theme {
+  --color-night: #0b0d12;
+  --color-surface: #161a23;
+  --color-surface-2: #1f2430;
+  --color-line: #2c3240;
+  --color-ink: #f4f1ea;
+  --color-muted: #a9afbc;
+  --color-light: #f6b93b;
+  --color-light-soft: #ffd27a;
+  --color-ink-on-light: #1b1305;
+  --color-fresh: #4ade80;
+  --color-aging: #fbbf24;
+  --color-stale: #f87171;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-night);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.leaflet-container {
+  background: var(--color-night);
+  font-family: var(--font-sans);
+}
+
+/* Fallback when VITE_CARTO_KEY is unset: turn light OSM tiles into a dark map. */
+.tiles-darkened {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.3);
+}
+
+/* ---- Shelter lights (map pins). The number is always printed; glow is decoration. ---- */
+.light-icon {
+  background: none;
+  border: none;
+}
+
+.light-pin {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+}
+
+.light-glow {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 210 122 / 0.95) 0%, rgb(246 185 59 / 0.55) 35%, rgb(246 185 59 / 0.18) 55%, transparent 72%);
+  animation: light-pulse 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.light-dim .light-glow {
+  inset: -10px;
+  opacity: 0.5;
+}
+
+.light-off .light-glow {
+  display: none;
+}
+
+.light-core,
+.count-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.light-core {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+
+.light-strong .light-core,
+.count-dot.light-strong {
+  background: var(--color-light-soft);
+  color: var(--color-ink-on-light);
+  box-shadow: 0 0 14px rgb(255 210 122 / 0.85);
+}
+
+.light-dim .light-core,
+.count-dot.light-dim {
+  background: #d99a2b;
+  color: var(--color-ink-on-light);
+  box-shadow: 0 0 6px rgb(217 154 43 / 0.6);
+}
+
+.light-off .light-core,
+.count-dot.light-off {
+  background: #3a3f4b;
+  color: #e5e7eb;
+  box-shadow: none;
+}
+
+.light-off .light-core {
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+}
+
+.count-dot {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.light-bump .light-core,
+.count-bump {
+  animation: count-bump 0.9s ease-out;
+}
+
+@keyframes light-pulse {
+  0%, 100% { transform: scale(0.88); opacity: 0.75; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes count-bump {
+  0% { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light-glow,
+  .light-bump .light-core,
+  .count-bump {
+    animation: none !important;
+  }
+}
