@@ -53,3 +53,15 @@ def test_rest_cors_uses_the_same_origins(monkeypatch):
     assert c.get("/api/x", headers={"Origin": PREVIEW}).headers.get("Access-Control-Allow-Origin") == PREVIEW
     bad = c.get("/api/x", headers={"Origin": PREVIEW + ".evil.com"})
     assert "Access-Control-Allow-Origin" not in bad.headers
+
+
+def test_pool_is_rebuilt_in_a_forked_process(app, db, monkeypatch):
+    """gunicorn --preload (Render's default) imports the app, then forks: the parent's pool never
+    connects in the child. The first use in a new process must build a fresh pool."""
+    from app import db as dbmod
+    parent_pool = dbmod.current_pool()
+    monkeypatch.setattr(dbmod.os, "getpid", lambda: dbmod._pool_pid + 1)
+    child_pool = dbmod.current_pool()
+    assert child_pool is not parent_pool and dbmod.ping()
+    with dbmod.transaction() as conn:
+        assert conn.execute("SELECT 1 AS one").fetchone()["one"] == 1

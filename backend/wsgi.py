@@ -15,3 +15,11 @@ logging.basicConfig(level=logging.INFO)
 prepare_database(config.DATABASE_URL, migrate=config.AUTO_MIGRATE)
 app = create_app()
 start_jobs()
+
+
+# With gunicorn --preload (Render's default GUNICORN_CMD_ARGS) the lines above run in the master
+# and the job threads don't survive the fork into the worker. Start them (once) in the worker on
+# its first request; Render's health check arrives within seconds.
+@app.before_request
+def _jobs_in_this_process():
+    start_jobs()

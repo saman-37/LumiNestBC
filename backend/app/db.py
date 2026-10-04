@@ -10,6 +10,8 @@ describe_url() / connection_hints() explain a bad DATABASE_URL without ever prin
 password; scripts/check_db.py and startup logging both use them.
 """
 import logging
+import os
+import threading
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -24,13 +26,17 @@ SCHEMA_PATH = Path(__file__).resolve().parents[1] / "sql" / "schema.sql"
 VALID_SSLMODES = ("disable", "allow", "prefer", "require", "verify-ca", "verify-full")
 
 _pool: ConnectionPool | None = None
+# The pool's background threads (which open connections) don't survive a fork. Render runs
+# gunicorn with --preload (GUNICORN_CMD_ARGS), so the app is imported in the master and then
+# forked into the worker: a pool made before the fork never connects (PoolTimeout). We remember
+# which process made the pool and build a fresh one, once, in any other process.
+_pool_args: tuple[str, int] | None = None
+_pool_pid: int | None = None
+_pool_lock = threading.Lock()
 
 
-def init_pool(database_url: str, max_size: int) -> None:
-    global _pool
-    if _pool is not None:
-        _pool.close()
-    _pool = ConnectionPool(
+def _new_pool(database_url: str, max_size: int) -> ConnectionPool:
+    return ConnectionPool(
         database_url,
         min_size=1,
         max_size=max_size,
@@ -41,11 +47,32 @@ def init_pool(database_url: str, max_size: int) -> None:
     )
 
 
-@contextmanager
-def transaction():
+def init_pool(database_url: str, max_size: int) -> None:
+    global _pool, _pool_args, _pool_pid
+    old = _pool if _pool_pid == os.getpid() else None  # never close a pool inherited from a parent
+    _pool = _new_pool(database_url, max_size)
+    _pool_args, _pool_pid = (database_url, max_size), os.getpid()
+    if old is not None:
+        old.close()
+
+
+def current_pool() -> ConnectionPool:
+    """The pool for this process, rebuilt once after a fork (see _pool_pid)."""
+    global _pool, _pool_pid
     if _pool is None:
         raise RuntimeError("init_pool() has not been called")
-    with _pool.connection() as conn:
+    if _pool_pid != os.getpid():
+        with _pool_lock:
+            if _pool_pid != os.getpid():
+                log.info("new process (pid %d): opening a fresh database pool", os.getpid())
+                _pool = _new_pool(*_pool_args)  # the parent's pool lost its threads; leave it be
+                _pool_pid = os.getpid()
+    return _pool
+
+
+@contextmanager
+def transaction():
+    with current_pool().connection() as conn:
         yield conn
 
 
@@ -54,7 +81,7 @@ def ping(timeout: float = 3.0) -> bool:
     if _pool is None:
         return False
     try:
-        with _pool.connection(timeout=timeout) as conn:
+        with current_pool().connection(timeout=timeout) as conn:
             conn.execute("SELECT 1")
         return True
     except (PoolTimeout, psycopg.Error):

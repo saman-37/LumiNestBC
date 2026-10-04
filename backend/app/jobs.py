@@ -4,6 +4,7 @@ Runs inside the single gunicorn worker as Socket.IO background tasks. Because we
 exactly one worker (-w 1), each job runs once, not once per worker.
 """
 import logging
+import os
 
 from . import config
 from .availability import change_beds
@@ -12,7 +13,7 @@ from .db import transaction
 from .sockets import emit_shelter_update, socketio
 
 log = logging.getLogger(__name__)
-_started = False
+_started_pid: int | None = None  # jobs are threads: they must be started in the serving process
 
 
 def expire_holds() -> int:
@@ -69,10 +70,11 @@ def _every(seconds: int, fn) -> None:
 
 
 def start_jobs() -> None:
-    global _started
-    if _started:
+    """Start the background jobs once per process (safe to call on every request)."""
+    global _started_pid
+    if _started_pid == os.getpid():
         return
-    _started = True
+    _started_pid = os.getpid()
     socketio.start_background_task(_every, config.EXPIRE_HOLDS_INTERVAL_SECONDS, expire_holds)
     socketio.start_background_task(_prewarm_voice)
     if config.SMS_NUDGE_ENABLED:
