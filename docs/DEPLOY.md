@@ -48,6 +48,7 @@ Add `--keep-staff-keys` to keep staff links already handed out.
 | Variable | What it is | Where to get it |
 |---|---|---|
 | `DATABASE_URL` | Tiger Data connection string, ending `?sslmode=require` | Step 1 |
+| `FRONTEND_ORIGIN_REGEX` | Vercel preview URLs, matched against the whole origin: `https://lumi-nest-bc-[a-z0-9-]+-samans-projects-3127ae22\.vercel\.app` | Preset in `render.yaml` |
 | `FRONTEND_ORIGIN` | Browser origins allowed for the API and Socket.IO, comma-separated, no trailing slash: `https://lumi-nest-bc.vercel.app,https://luminestbc.tech,https://www.luminestbc.tech` | Preset in `render.yaml` |
 | `BACKEND_PUBLIC_URL` | `https://luminestbc-api.onrender.com` (Twilio signatures and voice audio links use it) | Preset |
 | `TAG_BASE_URL` | `https://lumi-nest-bc.vercel.app` (switch to `https://luminestbc.tech` once the domain works) | Preset |
@@ -66,7 +67,8 @@ Add `--keep-staff-keys` to keep staff links already handed out.
       minutes idle (the first request then takes ~50 s, open apps show "Reconnecting…", and holds
       don't expire on time).
 - [ ] Deploy, then check the log shows `database ready at …; schema applied` and no
-      `DATABASE UNREACHABLE` line. `https://luminestbc-api.onrender.com/health` → `{"ok": true}`.
+      `DATABASE UNREACHABLE` line. `https://luminestbc-api.onrender.com/ready` → `{"ok": true, "database": "ok"}`
+      (Render's health check path is `/ready`, so a deploy that can't reach the database never goes live).
 
 ## 4. Frontend (Vercel)
 
@@ -74,7 +76,7 @@ Add `--keep-staff-keys` to keep staff links already handed out.
       `frontend/vercel.json` rewrites every path to `index.html` (so `/t/…`, `/staff/…`,
       `/hold/…`, `/admin` load on refresh), caches `/assets/*` for a year and never caches
       `index.html`.
-- [ ] **Environment variables** (Production). `VITE_*` values are baked in at build time, so
+- [ ] **Environment variables** (tick both Production **and Preview**). `VITE_*` values are baked in at build time, so
       **redeploy after changing any of them**:
 
 | Variable | What it is | Where to get it |

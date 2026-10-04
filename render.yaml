@@ -12,7 +12,8 @@ services:
     # Exactly one worker: Socket.IO and the background jobs live in one process. On startup it
     # checks the database (clear, password-free log line if unreachable) and applies the schema.
     startCommand: gunicorn -w 1 --threads 100 -b 0.0.0.0:$PORT wsgi:app
-    healthCheckPath: /health
+    # /ready also checks the database, so a deploy that can't reach it never goes live.
+    healthCheckPath: /ready
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
@@ -25,6 +26,9 @@ services:
       # Comma-separated, no trailing slashes. Used for REST CORS and Socket.IO.
       - key: FRONTEND_ORIGIN
         value: https://lumi-nest-bc.vercel.app,https://luminestbc.tech,https://www.luminestbc.tech
+      # Vercel preview deploys of this project only (whole origin must match).
+      - key: FRONTEND_ORIGIN_REGEX
+        value: https://lumi-nest-bc-[a-z0-9-]+-samans-projects-3127ae22\.vercel\.app
       # This service's own URL: Twilio webhook signatures and voice audio links use it.
       - key: BACKEND_PUBLIC_URL
         value: https://luminestbc-api.onrender.com

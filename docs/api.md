@@ -5,7 +5,8 @@ change, and mirror it in `frontend/src/lib/types.ts`.
 
 - Base URL: `VITE_API_URL` (production backend on Render). In local dev it's empty and Vite proxies `/api` and `/socket.io` to `http://localhost:8000`.
 - JSON in, JSON out. Timestamps are ISO 8601 with a UTC offset.
-- Errors look like `{"error": "<code>"}` with a 4xx status.
+- Errors look like `{"error": "<code>"}` with a 4xx status. When the database is unreachable,
+  any endpoint may answer `503 {"error": "database_unavailable"}` (with `Retry-After`).
 - **GET never changes data.**
 
 ## The Shelter object
@@ -230,11 +231,11 @@ Clients replace their copy of that shelter by `id`.
 
 | Endpoint | Status |
 |---|---|
-| `GET /health` | `200 {"ok": true}` |
+| `GET /health` | `200 {"ok": true}` (process is up; doesn't touch the database) |
+| `GET /ready` | `200 {"ok": true, "database": "ok"}`, or `503 {"ok": false, "error": "database_unavailable"}` |
 | `GET /api/stats`, `GET /api/stats/<anything>` | `501 {"error": "not_implemented", "tier": 3}` |
 | `GET /api/weather-layer` | `501 {"error": "not_implemented", "tier": 3}` |
 
-<<<<<<< HEAD
 ## Voice Matching & Speech (Communications)
 
 ### `POST /api/match`

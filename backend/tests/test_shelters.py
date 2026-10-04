@@ -69,7 +69,8 @@ def test_large_api_responses_are_gzipped_when_asked(client, db):
 def test_dev_server_accepts_lan_socket_origins_but_production_does_not():
     from app import socket_origins
     from app import config as cfg
-    assert socket_origins(False) == cfg.FRONTEND_ORIGINS
+    production = socket_origins(False)
+    assert production(cfg.FRONTEND_ORIGINS[0]) and not production("http://192.168.1.20:5173")
     allowed = socket_origins(True)
     assert allowed("http://172.16.164.201:5173") and allowed("http://192.168.1.20:5173")
     assert allowed(cfg.FRONTEND_ORIGINS[0])

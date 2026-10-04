@@ -16,7 +16,7 @@ from pathlib import Path
 import psycopg
 from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
+from psycopg_pool import ConnectionPool, PoolTimeout
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +47,18 @@ def transaction():
         raise RuntimeError("init_pool() has not been called")
     with _pool.connection() as conn:
         yield conn
+
+
+def ping(timeout: float = 3.0) -> bool:
+    """True if a pooled connection answers SELECT 1 within timeout seconds (used by /ready)."""
+    if _pool is None:
+        return False
+    try:
+        with _pool.connection(timeout=timeout) as conn:
+            conn.execute("SELECT 1")
+        return True
+    except (PoolTimeout, psycopg.Error):
+        return False
 
 
 # --- Diagnosis (never prints the password) ---------------------------------------------

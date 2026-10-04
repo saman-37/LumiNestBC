@@ -22,6 +22,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://luminest:luminest@localho
 FRONTEND_ORIGINS = [
     o.strip() for o in os.getenv("FRONTEND_ORIGIN", "http://localhost:5173").split(",") if o.strip()
 ]
+# Optional regex for origins that change per deploy (Vercel preview URLs). Must match the whole
+# origin, e.g. https://lumi-nest-bc-[a-z0-9-]+-samans-projects-3127ae22\.vercel\.app
+FRONTEND_ORIGIN_REGEX = os.getenv("FRONTEND_ORIGIN_REGEX", "").strip()
 BACKEND_PUBLIC_URL = os.getenv("BACKEND_PUBLIC_URL", "http://localhost:8000")
 DB_POOL_MAX_SIZE = int(os.getenv("DB_POOL_MAX_SIZE", "20"))
 # Apply sql/schema.sql (idempotent) when the server starts, so a fresh database needs no manual step.
