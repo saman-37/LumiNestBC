@@ -16,6 +16,13 @@ elif [ ! -f .env ]; then
   echo "No .env in main repo; created .env from .env.example"
 fi
 
+# Claude Code local settings (sandbox allowlist): also git-ignored, so copy from the main checkout.
+if [ "$MAIN_REPO" != "$WORKTREE" ] && [ -f "$MAIN_REPO/.claude/settings.local.json" ]; then
+  mkdir -p .claude
+  cp "$MAIN_REPO/.claude/settings.local.json" .claude/settings.local.json
+  echo "Copied .claude/settings.local.json from $MAIN_REPO"
+fi
+
 # 2. Backend: Python venv + pip (see README "Local setup").
 echo "Installing backend dependencies..."
 [ -d backend/.venv ] || python3 -m venv backend/.venv
