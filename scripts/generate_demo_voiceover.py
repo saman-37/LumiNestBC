@@ -12,7 +12,7 @@ SCRIPT_PARTS = [
         "It's 11 PM on East Hastings. Rain is falling. An outreach worker is standing with someone who needs a warm bed tonight. "
         "The official BC211 public shelter list updates only twice a day on weekdays. At night and over weekends, it is completely frozen. "
         "Outreach workers spend 45 minutes making blind phone calls to full shelters while someone shivers outside. "
-        "This is OpenBed: a live shelter-bed network for Metro Vancouver. A bed tonight, found in 60 seconds, not 60 phone calls."
+        "This is LuminestBC: a live shelter-bed network for Metro Vancouver. A bed tonight, found in 60 seconds, not 60 phone calls."
     ),
     (
         "02_tap_board.mp3",
@@ -38,7 +38,7 @@ SCRIPT_PARTS = [
     (
         "05_closing.mp3",
         "Built with Tiger Data TimescaleDB, Gemini 2.5 Flash, ElevenLabs voice synthesis, and React. "
-        "With OpenBed, no one is left out in the cold while an open bed sits empty. Thank you."
+        "With LuminestBC, no one is left out in the cold while an open bed sits empty. Thank you."
     ),
 ]
 

@@ -1,94 +1,84 @@
-# OpenBed (LumiNestBC) — Pitch Deck
+# LuminestBC — Pitch Deck
 
-> **"A bed tonight, found in 60 seconds, not 60 phone calls."**  
+> **"Find the lights still on."**  
+> *A bed tonight, found in 60 seconds, not 60 phone calls.*  
 > *StormHacks 2026 · Metro Vancouver Live Shelter-Bed Network*
 
 ---
 
 ```mermaid
 flowchart LR
-    A["🏨 Shelter Desk<br/>(NFC 2-sec Tap)"] -->|Socket.IO<br/>Instant Broadcast| B["🗺️ Live Map<br/>(Data Freshness Pins)"]
-    C["🎙️ Outreach Worker<br/>(Voice Search)"] -->|Gemini + ElevenLabs| D["⚡ 60-Min Hold<br/>(Atomic Row Lock)"]
+    A["🏨 Shelter Front Desk<br/>(NFC 2-sec Tap)"] -->|Socket.IO<br/>Instant Broadcast| B["🗺️ Live Freshness Map<br/>(Green / Amber / Red Pins)"]
+    C["🎙️ Outreach Worker<br/>(Voice Search)"] -->|Gemini + ElevenLabs| D["⚡ 60-Min Bed Hold<br/>(Atomic Row Lock)"]
     B <--> D
-    D -->|TimescaleDB<br/>Tiger Data| E["📊 Trend Analytics<br/>& Event Log"]
+    D -->|TimescaleDB<br/>Tiger Data| E["📊 Trend Analytics<br/>& Audit Log"]
 ```
 
 ---
 
-## Slide 1: The Hook & The Reality
+## Slide 1: The Problem (Initially)
 
 ### 11:00 PM on East Hastings, Rain Falling
-An outreach worker is standing on the sidewalk with a woman in a wheelchair who has a small dog. She needs a warm, safe bed tonight.
+An outreach worker is standing on the sidewalk with someone shivering in the cold who has a small dog and needs an accessible bed.
 
-- **The Current System:** The worker pulls out the official **BC211 shelter list**. It was last updated at 7:30 PM on a Friday. BC211 updates only twice a day on weekdays. Over weekends and nights, **it is completely frozen**.
-- **The Reality:** Outreach workers spend **45 to 60 minutes making blind phone calls** to shelter after shelter while someone shivers beside them. Most shelters are full. Exhausted shelter desk staff field dozens of identical calls all night.
-- **The Tragedy:** Every night in Metro Vancouver, people sleep on sidewalks while beds 6 blocks away sit empty because nobody knew they freed up at 10:30 PM.
+- **The Stale Data Trap:** The worker opens the official **BC211 shelter list**. It was last updated at 7:30 PM on Friday. BC211 updates only twice a day on weekdays. Over weekends and nights, **it is completely frozen** (often 27+ hours out of date).
+- **The Blind Phone Call Grunt Work:** Outreach workers spend **45 to 60 minutes making blind phone calls** from the sidewalk to shelter after shelter. Most are full.
+- **Frontline Exhaustion:** Shelter desk staff field dozens of identical phone calls all night while trying to manage intake and guest safety.
+- **The Tragedy:** Every night in Metro Vancouver, people sleep on wet concrete while open beds sit empty just 6 blocks away because nobody knew they freed up at 10:30 PM.
 
 > [!IMPORTANT]
 > **The Problem Isn't Just Beds. It's Information Velocity.**
 
 ---
 
-## Slide 2: Why Past Solutions Failed
+## Slide 2: The Solution — Three Connected Pillars
 
-Cities like Los Angeles spent millions on shelter-bed portals. In 2023, the LA City Controller released a scathing audit: **the system was woefully inaccurate and barely used**.
-
-### Why did they fail?
-1. **High Friction for Shelter Staff:** Expecting overworked shelter staff to log into complex enterprise software, remember passwords, and fill out forms every time someone leaves is unrealistic.
-2. **Untrusted Data:** A bed count that says "3 open" without a timestamp is dangerous. If a worker walks someone 20 minutes in the rain and finds the bed was taken 4 hours ago, trust in the app is permanently broken.
-3. **No Reservation Mechanism:** Finding a bed doesn't help if someone else takes it while you're in transit.
-
----
-
-## Slide 3: The Solution — OpenBed (LumiNestBC)
-
-OpenBed bridges the gap with three tightly interconnected systems:
+LuminestBC eliminates data-entry friction and instantly connects outreach workers to real, open beds through three interconnected systems:
 
 ```
 ┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
 │   1. Tap to Update     │      │   2. Voice Match & Hold│      │   3. Trust the Data    │
 │                        │      │                        │      │                        │
-│ Physical NFC tags at   │ ───> │ Speak needs naturally; │ ───> │ Real-time freshness    │
-│ the front desk.        │      │ AI extracts criteria,  │      │ clock on every pin.    │
-│ No login, no app.      │      │ deterministic matcher  │      │ Sub-second updates     │
+│ Physical NFC tags at   │ ───> │ Speak needs naturally; │ ───> │ Honest freshness clock │
+│ the shelter desk.      │      │ AI extracts criteria,  │      │ on every pin.          │
+│ No login, no app.      │      │ deterministic code     │      │ Sub-second sync        │
 │ 2 seconds to update.   │      │ ranks real beds & holds│      │ via Socket.IO & TSDB.  │
 └────────────────────────┘      └────────────────────────┘      └────────────────────────┘
 ```
 
-1. **Tap to Update:** Three cheap NFC tags at the front desk: `[Bed Freed (+1)]`, `[Bed Filled (-1)]`, and `[Full (0)]`. Staff tap their phone. Done in 2 seconds. A 10-second instant undo protects against mistaps.
-2. **Find & Hold by Voice:** An outreach worker presses a mic button on the map (or calls the 24/7 hotline) and says what they need in plain English. The top spoken match is read back via ElevenLabs, and the bed is locked in with a **60-minute hold**.
-3. **Trust Through Freshness:** Every single bed count glows with an honest data-freshness age (`Updated 4 min ago`), backed by TimescaleDB event sourcing.
+1. **Tap to Update:** Physical NFC tags at the shelter front desk: `[Bed Freed (+1)]`, `[Bed Filled (-1)]`, and `[Full (0)]`. Staff tap their phone. Done in 2 seconds. A 10-second instant undo protects against mistaps.
+2. **Find & Hold by Voice:** An outreach worker presses a mic button on the map (or calls the 24/7 hotline) and says what they need in plain English. The top match is read back via ElevenLabs streaming voice, and the bed is reserved with an atomic **60-minute hold**.
+3. **Trust Through Freshness:** Every single bed count features a color-coded data-freshness age (`Updated 4 min ago`), backed by Tiger Data TimescaleDB event sourcing.
 
 ---
 
-## Slide 4: Flow A — Tap to Update (Zero-Friction Staff Experience)
+## Slide 3: Flow A — Tap to Update (Zero-Friction Front Desk)
 
-### Designed for 2:00 AM at a Busy Front Desk
-- **No App Installation:** Staff do not need to download anything from an App Store or create an account.
+### Designed for 2:00 AM at a Busy Shelter Front Desk
+- **Zero Friction — No App Installation:** Shelter staff do not need to download an app or log into an account.
 - **Physical NFC Tags:**
-  - 🟢 **Bed Freed (+1):** Someone checks out early. Tap phone. Count increases by 1.
-  - 🔴 **Bed Filled (-1):** Someone checks in. Tap phone. Count decreases by 1.
-  - ⚫ **Full:** Shelter reaches capacity. Tap phone. Count sets to 0.
-  - 🔵 **Arrival:** Guest arrives for an active hold. Tap door tag. Hold confirmed.
-- **Fail-Safe Idempotency:** If cell service is spotty and the phone retries, unique cryptographic `tap_id` tokens ensure a single tap never double-counts. 5-second tap debounce prevents accidental double-taps.
-- **10-Second Undo:** A prominent undo bar allows staff to reverse a mistaken tap with a single touch.
+  - 🟢 **Bed Freed (+1):** Guest checks out early. One phone tap increases the count by 1.
+  - 🔴 **Bed Filled (−1):** Guest checks in. One phone tap decreases the count by 1.
+  - ⚫ **Full (0):** Shelter hits capacity. One phone tap marks capacity 0 immediately.
+  - 🔵 **Arrival:** Guest arrives for an active hold. One door tap confirms arrival.
+- **Fail-Safe Idempotency:** Tokenized cryptographic tap IDs ensure cell signal retries never double-count. 5-second debounce prevents accidental double-taps.
+- **10-Second Undo Banner:** An instant undo bar allows staff to reverse a mistaken tap with a single touch.
 
 ---
 
-## Slide 5: Flow B — The Live Map & Data Freshness
+## Slide 4: Flow B — The Live Map & Data Freshness
 
 ### Visualizing Real Availability Across Metro Vancouver
-- **Dynamic Dark Map:** Built on high-performance vector tiles. Shelters with open beds glow softly in emerald green.
-- **Honest Data Freshness Pins:**
-  - 🟢 **Green Halo (< 60 min):** Staff confirmed recently. High confidence.
-  - 🟡 **Amber Halo (60–180 min):** Getting stale; call to verify.
-  - 🔴 **Red Halo (> 180 min):** Unconfirmed count.
-- **Granular Needs Filtering:** 1-tap toggles for Women Only, Youth (<24), Families, Pets Allowed, Wheelchair/Accessible, and Couples.
-- **Sub-Second Real-Time Sync:** When a staff member taps an NFC tag in Surrey, the pin count changes across every outreach worker's phone in Vancouver in **under 300 milliseconds** via WebSockets.
+- **Honest Data Freshness Halos:**
+  - 🟢 **Green (< 60 min):** Staff confirmed recently. High confidence to dispatch immediately.
+  - 🟡 **Amber (1–3 hours):** Getting stale; tap-to-call button prominently highlighted.
+  - 🔴 **Red (> 3 hours):** Unconfirmed count. Clearly flagged so outreach workers avoid dead ends.
+- **1-Tap Accessibility & Needs Filters:** Instant filtering for Women Only, Youth (<24), Families, Pets Allowed, Wheelchair/Accessible, and Couples.
+- **Sub-Second Real-Time Broadcast:** When a staff member taps an NFC tag in Surrey, the count updates across every outreach worker's phone in Vancouver in **under 300 milliseconds** via WebSockets.
 
 ---
 
-## Slide 6: Flow C — Voice Match & 60-Minute Holds
+## Slide 5: Flow C — Voice Match & 60-Minute Holds
 
 ```mermaid
 sequenceDiagram
@@ -97,7 +87,7 @@ sequenceDiagram
     participant Web as Web App (Mic Button)
     participant Gemini as Gemini 2.5 Flash
     participant Matcher as Deterministic Matcher
-    participant DB as Tiger Data (PostgreSQL)
+    participant DB as Tiger Data (TimescaleDB)
     participant Eleven as ElevenLabs Voice
 
     Worker->>Web: "Woman with small dog near Main & Hastings, uses a walker"
@@ -114,21 +104,20 @@ sequenceDiagram
 ```
 
 ### The 60-Minute Guaranteed Hold
-- Outreach workers cannot afford to travel 20 minutes only to find the bed gone.
-- Clicking **"Hold Bed"** creates an atomic lock. The public bed count drops by 1 immediately.
-- A live visual countdown timer appears on the worker's phone.
-- **Race-Condition Proof:** If two workers tap "Hold" on the last remaining bed in the exact same millisecond, PostgreSQL transaction isolation (`SELECT FOR UPDATE`) ensures exactly one wins, while the other is instantly guided to the #2 next-best match.
-- **Automatic Return:** If the worker does not arrive within 60 minutes, the server-side cron automatically releases the bed back into the public pool.
+- **Eliminates Transit Risk:** Outreach workers cannot afford to travel 20 minutes only to find the bed was claimed moments earlier.
+- **Atomic Concurrency Protection:** Clicking **"Hold Bed"** creates an atomic database lock (`SELECT FOR UPDATE`). The public bed count drops by 1 immediately.
+- **Race-Condition Proof:** If two workers tap "Hold" on the last remaining bed at the exact same millisecond, PostgreSQL transaction isolation ensures exactly one gets the hold, while the other is instantly guided to the #2 next-best match.
+- **Automatic Expiry & Release:** If the guest does not arrive within 60 minutes, the server-side cron automatically releases the bed back into the public pool.
 
 ---
 
-## Slide 7: Technical Architecture & Stack
+## Slide 6: Technical Architecture & Core Principles
 
 ```
    ┌──────────────────────────────────────────────────────────┐
    │                  FRONTEND (PWA & Web)                    │
    │  React 19 · TypeScript · Tailwind CSS · Vite             │
-   │  MapLibre GL / Leaflet · Motion · Web Speech API         │
+   │  MapLibre GL / Leaflet · Web Speech API                  │
    └────────────────────────────┬─────────────────────────────┘
                                 │ HTTPS / WSS
    ┌────────────────────────────▼─────────────────────────────┐
@@ -152,29 +141,23 @@ sequenceDiagram
    └──────────────────────────────────────────────────────────┘
 ```
 
----
-
-## Slide 8: The Three Core Engineering Principles
-
-### 1. "AI Understands Language; Plain Code Makes Every Decision"
-- We **never** let an LLM hallucinate shelter availability or choose who gets a bed.
-- **Gemini's only job:** Parse messy natural language (*"I'm with a guy who has crutches around Commercial-Broadway"*) into clean JSON criteria.
-- **Deterministic Python:** Applies rigid hard filters (e.g. men are never matched to women-only shelters) and computes optimal scores:
-  $$\text{Score} = \text{Distance (km)} + \min\left(\frac{\text{Staleness (min)}}{30}, 10\right)$$
-
-### 2. Privacy by Architecture, Not Policy
-- **Zero Client Data:** We do not ask for or store client names, dates of birth, or case histories.
-- **DV Shelter Fortress:** Domestic violence shelters are scrubbed at the database repository layer (`public_shelter()`). Their latitude, longitude, address, and phone numbers are stripped before any byte leaves the server. The UI only ever shows: *"Confidential safe-housing available: Call [Hotline]"*.
-
-### 3. Event-Sourced Hypertable (Tiger Data)
-- Every single bed increment, decrement, hold, and expiry is written to an immutable TimescaleDB hypertable.
-- Provides an auditable historical record of shelter bed fluctuations across seasons, cold-weather alerts, and neighborhoods.
+### Three Core Engineering Safeguards
+1. **AI Understands Language; Plain Code Makes Every Decision:**
+   - Gemini's only role is converting natural speech (*"I'm with a guy who has crutches near Commercial-Broadway"*) into clean JSON criteria.
+   - Deterministic Python applies hard filters and computes optimal rankings:
+     $$\text{Score} = \text{Distance (km)} + \min\left(\frac{\text{Staleness (min)}}{30}, 10\right)$$
+   - Zero hallucinated beds or invalid demographic placements.
+2. **Privacy by Architecture, Not Policy:**
+   - **Zero Client PII:** No client names, birthdates, or personal identifiers are ever collected or stored.
+   - **DV Shelter Fortress:** Domestic violence shelters are scrubbed at the database boundary (`public_shelter()`). Their latitude, longitude, and street address are mathematically stripped before reaching any client.
+3. **Immutable Event-Sourced Hypertable:**
+   - Every tap, hold, check-in, and release is logged in an immutable TimescaleDB hypertable for regional capacity analysis.
 
 ---
 
-## Slide 9: Real Metro Vancouver Data (Today)
+## Slide 7: Real Metro Vancouver Production Data (Today)
 
-We did not build this with mock data. We scraped and structured **67 real Metro Vancouver shelters**:
+Built and populated with **67 real Metro Vancouver shelters**:
 
 | Metric | Real Production Numbers |
 |---|---|
@@ -182,42 +165,19 @@ We did not build this with mock data. We scraped and structured **67 real Metro 
 | **Total Tracked Capacity** | **1,850+ shelter beds** |
 | **Geocoded Pins** | 100% geocoded with coordinates and verified street addresses |
 | **Voice Processing Latency** | **< 600 ms** extraction + match ranking |
-| **TTS Narration Latency** | High-fidelity ElevenLabs audio generated and cached in memory |
+| **TTS Narration Latency** | High-fidelity ElevenLabs audio generated and streamed |
 | **Database Response Time** | **< 15 ms** queries on Tiger Data TimescaleDB |
 
 ---
 
-## Slide 10: Competitive Matrix
-
-| Capability | BC211 Public List | Legacy City Portals | **OpenBed (LumiNestBC)** |
-|---|:---:|:---:|:---:|
-| **Update Frequency** | 2x / weekday (stale nights & weekends) | Daily / irregular | **Real-time (instant NFC tap)** |
-| **Staff Update Effort** | Phone/email staff | 5-min multi-field form | **2-second phone tap (No login)** |
-| **Data Freshness Indicators** | ❌ None | ❌ None | **✅ Color-coded live ages** |
-| **Bed Reservation** | ❌ None | ❌ None | **✅ 60-Minute Atomic Hold** |
-| **Voice Search (In-App & Phone)** | ❌ None | ❌ None | **✅ Gemini + ElevenLabs** |
-| **Race-Condition Protection** | ❌ None | ❌ None | **✅ DB Row-Level Locking** |
-| **DV Location Protection** | Manual | Variable | **✅ Scrubbed in Core Engine** |
-
----
-
-## Slide 11: Roadmap & Future Expansion
-
-- **Phase 1 (Complete):** NFC Tap Board, Live Freshness Map, Web Voice Match, ElevenLabs Spoken Narration, 60-min Holds, 67 Real Shelters in TimescaleDB.
-- **Phase 2 (Next 60 Days):**
-  - **Extreme Weather Alert Overlays:** Automatic integration with Environment Canada alerts to open emergency weather shelter (EWR) pins when temperatures drop below 0°C.
-  - **Transit Routing:** 1-tap walking and TransLink bus/SkyTrain directions directly from the hold confirmation screen.
-  - **Automated SMS Nudges:** Twilio worker texts shelters whose count has not updated in over 3 hours: *"Reply with your open beds to refresh your pin"*.
-- **Phase 3 (Provincial Scaling):** Partnership with BC Housing and the Homelessness Services Association of BC (HSABC) to distribute NFC tags to all 120+ shelters across British Columbia.
-
----
-
-## Slide 12: The Closing Ask
+## Slide 8: The Close & Vision
 
 > ### "A bed tonight, found in 60 seconds, not 60 phone calls."
 
-By removing all data entry friction for shelter staff and giving outreach workers instant voice search and guaranteed 60-minute holds, OpenBed ensures that no one is left outside in the rain while a bed sits empty.
+By removing all data entry friction for shelter staff and giving outreach workers instant voice search and guaranteed 60-minute holds, LuminestBC ensures that no one is left outside in the rain while a bed sits empty.
 
-### OpenBed / LumiNestBC
+### LuminestBC
+- **Wordmark:** Luminest**BC**
+- **Tagline:** *"Find the lights still on."*
 - **Live Repository:** [github.com/saman-37/LumiNestBC](https://github.com/saman-37/LumiNestBC)
 - **Built for:** StormHacks 2026
