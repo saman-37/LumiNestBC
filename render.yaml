@@ -14,12 +14,20 @@ services:
         value: 3.11.9
       - key: DATABASE_URL
         sync: false
+      # Comma-separated, no trailing slashes: the Vercel URL, plus the custom domain once it's live,
+      # e.g. https://luminestbc.vercel.app,https://luminestbc.tech,https://www.luminestbc.tech
       - key: FRONTEND_ORIGIN
-        value: https://luminestbc.tech,https://www.luminestbc.tech
+        sync: false
       - key: BACKEND_PUBLIC_URL
         sync: false
       - key: SMS_NUDGE_ENABLED
         value: "false"
+      - key: DEV_TOOLS_ENABLED
+        value: "true"  # no /admin or simulators in production
+      - key: TAG_BASE_URL
+        value: hhttps://lumi-nest-bc.vercel.app
+      - key: ELEVENLABS_MODEL
+        value: eleven_flash_v2_5
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN

@@ -7,3 +7,5 @@ python-dotenv>=1.0
 gunicorn>=22.0
 pytest>=8.0
 twilio>=9.0
+certifi>=2024.0
+pdfplumber>=0.11

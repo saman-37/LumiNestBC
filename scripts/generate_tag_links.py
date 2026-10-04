@@ -1,12 +1,21 @@
-"""Create the 4 NFC tags for every shelter and export their URLs.
+"""Create every shelter's 4 NFC tags and private staff-portal key, and export the links.
 
     python scripts/generate_tag_links.py                                  # https://luminestbc.tech
     python scripts/generate_tag_links.py --base-url http://localhost:5173 # local testing
     python scripts/generate_tag_links.py --rotate                         # new secrets for all tags
+    python scripts/generate_tag_links.py --rotate-staff-keys              # new staff links for all
 
-Existing tags keep their secret (so already-written NFC tags keep working) unless --rotate.
-Writes data/tag_links.csv, which contains secrets and is git-ignored. Don't commit it.
-URL format: <base>/t/<shelter_id>/<action>?k=<secret>
+Writes data/tag_links.csv with one row per shelter: the staff portal link plus the four tag
+links. It contains secrets and is git-ignored. Don't commit it.
+
+Tags keep their secret (so already-written NFC tags keep working) unless --rotate.
+Staff keys are stored only as a hash, so a staff link can only be printed when the key is
+created: shelters without a key get one; existing keys are kept (their link column says so)
+unless --rotate-staff-keys.
+
+URL formats:
+  tag:          <base>/t/<shelter_id>/<action>?k=<secret>
+  staff portal: <base>/staff/<shelter_id>#key=<key>   (the #fragment never reaches server logs)
 """
 import argparse
 import csv
@@ -16,9 +25,10 @@ import string
 
 from _common import ROOT, TAG_ACTIONS, connect
 
-LABELS = {"freed": "Bed freed (+1)", "filled": "Bed filled (-1)", "full": "We're full (0)",
-          "arrive": "Arrival (by the door)"}
+from app.auth import set_staff_key
+
 ALPHABET = string.ascii_letters + string.digits
+KEPT = "(existing key kept; use --rotate-staff-keys for a new link)"
 
 
 def new_secret() -> str:
@@ -29,14 +39,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--base-url", default=os.getenv("TAG_BASE_URL", "https://luminestbc.tech"))
     parser.add_argument("--out", default=str(ROOT / "data" / "tag_links.csv"))
-    parser.add_argument("--rotate", action="store_true", help="replace every existing secret")
+    parser.add_argument("--rotate", action="store_true", help="replace every existing tag secret")
+    parser.add_argument("--rotate-staff-keys", action="store_true", help="replace every staff-portal key")
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
 
-    links = []
+    rows = []
     with connect() as conn:
-        shelters = conn.execute("SELECT id, name FROM shelters ORDER BY id").fetchall()
+        shelters = conn.execute(
+            "SELECT s.id, s.name, k.shelter_id IS NOT NULL AS has_key"
+            " FROM shelters s LEFT JOIN staff_keys k ON k.shelter_id = s.id ORDER BY s.id"
+        ).fetchall()
         for shelter in shelters:
+            row = {"shelter_id": shelter["id"], "shelter_name": shelter["name"]}
+            if shelter["has_key"] and not args.rotate_staff_keys:
+                row["staff_portal_url"] = KEPT
+            else:
+                row["staff_portal_url"] = f"{base}/staff/{shelter['id']}#key={set_staff_key(conn, shelter['id'])}"
             for action in TAG_ACTIONS:
                 tag_id = f"{shelter['id']}-{action}"
                 existing = conn.execute("SELECT secret FROM tags WHERE id = %s", (tag_id,)).fetchone()
@@ -46,18 +65,19 @@ def main() -> None:
                     " ON CONFLICT (id) DO UPDATE SET secret = EXCLUDED.secret",
                     (tag_id, shelter["id"], action, secret),
                 )
-                links.append({"shelter_id": shelter["id"], "shelter_name": shelter["name"],
-                              "action": action, "label": LABELS[action],
-                              "url": f"{base}/t/{shelter['id']}/{action}?k={secret}"})
+                row[f"{action}_url"] = f"{base}/t/{shelter['id']}/{action}?k={secret}"
+            rows.append(row)
 
+    fields = ["shelter_id", "shelter_name", "staff_portal_url"] + [f"{a}_url" for a in TAG_ACTIONS]
     with open(args.out, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["shelter_id", "shelter_name", "action", "label", "url"])
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
-        writer.writerows(links)
+        writer.writerows(rows)
 
-    for link in links:
-        print(f"{link['shelter_id']:<14} {link['label']:<22} {link['url']}")
-    print(f"\n{len(links)} tag link(s) for {len(shelters)} shelter(s) -> {args.out}")
+    for row in rows:
+        print(f"{row['shelter_id']:<14} staff portal: {row['staff_portal_url']}")
+    new_keys = sum(not r["staff_portal_url"].startswith("(") for r in rows)
+    print(f"\n{len(rows)} shelter(s), {new_keys} new staff link(s), {len(rows) * 4} tag link(s) -> {args.out}")
 
 
 if __name__ == "__main__":

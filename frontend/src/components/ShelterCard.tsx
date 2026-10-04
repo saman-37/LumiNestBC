@@ -2,7 +2,7 @@ import { Phone, ShieldCheck } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
 import { bedsWord, FILTERS, shelterState } from '../lib/filters'
-import { formatKm } from '../lib/format'
+import { formatKm, sourceLabel } from '../lib/format'
 import type { Shelter } from '../lib/types'
 import { AnimatedNumber } from './AnimatedNumber'
 import { Button, LinkButton } from './Button'
@@ -48,7 +48,9 @@ export function ShelterCard({ item: { shelter, km }, best, holding, onSelect, on
   const collapse = useCollapse()
   const state = shelterState(shelter)
   const open = state === 'open' || state === 'open-one'
-  const caption = state === 'stale' ? 'unconfirmed' : state === 'full' ? 'full tonight' : `${bedsWord(shelter.open_beds)} open`
+  const caption = !shelter.accepting
+    ? 'not accepting'
+    : state === 'stale' ? 'unconfirmed' : state === 'full' ? 'full tonight' : `${bedsWord(shelter.open_beds)} open`
 
   return (
     <motion.li {...collapse}>
@@ -59,7 +61,7 @@ export function ShelterCard({ item: { shelter, km }, best, holding, onSelect, on
             <span className="block break-words text-[16px] font-bold leading-snug text-text">{shelter.name}</span>
             <span className="mt-0.5 block text-[13px] text-text-muted">{metaLine(shelter, km)}</span>
             <span className="mt-1.5 block">
-              <FreshnessLine shelter={shelter} />
+              <FreshnessLine shelter={shelter} source={sourceLabel(shelter.last_update_source)} />
             </span>
           </span>
           <span className="shrink-0 text-right">

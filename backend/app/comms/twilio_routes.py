@@ -16,6 +16,7 @@ import logging
 import re
 import threading
 import time
+from time import perf_counter
 from xml.sax.saxutils import escape
 
 from flask import Blueprint, Response, abort, request
@@ -27,7 +28,16 @@ from ..db import transaction
 from ..sockets import emit_shelter_update
 from .gemini import extract_voice_request, parse_staff_text
 from .matcher import find_area, rank_shelters
-from .voice import beds_word, cache_audio, describe_match, get_cached_audio, say, spoken_phone, text_to_speech
+from .voice import (
+    audio_id_for,
+    beds_word,
+    cache_audio,
+    describe_match,
+    get_cached_audio,
+    say,
+    spoken_phone,
+    text_to_speech,
+)
 
 log = logging.getLogger(__name__)
 
@@ -50,13 +60,20 @@ def say_verb(text: str) -> str:
     return f'<Say language="{LANGUAGE}">{escape(text)}</Say>'
 
 
+def audio_path(audio_id: str) -> str:
+    return f"/audio/{audio_id}.mp3"
+
+
+def audio_url(audio_id: str) -> str:
+    """Absolute URL Twilio fetches. Always BACKEND_PUBLIC_URL (e.g. the ngrok URL), never localhost."""
+    return config.BACKEND_PUBLIC_URL.rstrip("/") + audio_path(audio_id)
+
+
 def play_or_say(text: str) -> str:
-    """Return Twilio <Play> using ElevenLabs audio if available, else fallback to <Say>."""
-    audio_bytes = text_to_speech(text)
-    if audio_bytes:
-        audio_id = cache_audio(audio_bytes)
-        audio_url = f"{config.BACKEND_PUBLIC_URL.rstrip('/')}/audio/{audio_id}.mp3"
-        return f"<Play>{escape(audio_url)}</Play>"
+    """Return Twilio <Play> using cached ElevenLabs audio if available, else fallback to <Say>."""
+    audio_id = audio_id_for(text)
+    if audio_id:
+        return f"<Play>{escape(audio_url(audio_id))}</Play>"
     return say_verb(text)
 
 
@@ -109,14 +126,32 @@ def load_public_shelters() -> list[dict]:
     return [public_shelter(r) for r in rows]
 
 
-def answer_lines(transcript: str) -> list[str]:
-    """Turn what the caller said into the sentences to speak (best matches first)."""
+def answer(transcript: str) -> dict:
+    """The whole voice pipeline for one transcript, with timings (used by calls and /api/dev/voice).
+
+    Gemini only extracts JSON; matching and ranking are plain Python; replies are templates.
+    """
+    started = perf_counter()
     req = extract_voice_request(transcript)
+    extracted = perf_counter()
     area = find_area(req.get("area_text"))
     origin = (area[1], area[2]) if area else None
     matches = rank_shelters(req, load_public_shelters(), origin=origin)
     lines = [line for m in matches if (line := describe_match(m, area[0] if area else None))]
-    return lines or [say("no_match")]
+    ranked = perf_counter()
+    return {
+        "request": req,
+        "area": area[0] if area else None,
+        "matches": matches,
+        "lines": lines or [say("no_match")],
+        "timings_ms": {"gemini": round((extracted - started) * 1000),
+                       "ranking": round((ranked - extracted) * 1000)},
+    }
+
+
+def answer_lines(transcript: str) -> list[str]:
+    """Turn what the caller said into the sentences to speak (best matches first)."""
+    return answer(transcript)["lines"]
 
 
 @bp.post("/twilio/voice")
@@ -350,20 +385,29 @@ def find_shelter_by_staff_phone(phone: str) -> list[dict]:
     return [r for r in rows if normalize_phone(r["staff_phone"]) == wanted]
 
 
+def handle_staff_sms(from_number: str, body: str) -> dict:
+    """Apply a staff text. Returns {"reply", "shelter" (updated row or None), "delta"}.
+
+    Shared by POST /twilio/sms and the admin SMS simulator (POST /api/dev/sms).
+    """
+    shelters = find_shelter_by_staff_phone(from_number)
+    if len(shelters) != 1:
+        return {"reply": "This number isn't set up to update a shelter on LuminestBC. "
+                         "Please contact the LuminestBC team.", "shelter": None, "delta": None}
+    change = bed_change(parse_staff_text(body))
+    if change is None:
+        return {"reply": 'Sorry, I couldn\'t read a bed count. Try "3 beds open", "1 more bed" or "full".',
+                "shelter": None, "delta": None}
+    with transaction() as conn:
+        updated, applied = change_beds(conn, shelters[0]["id"], source="sms", staff_update=True, **change)
+    emit_shelter_update(updated)
+    n = updated["open_beds"]
+    return {"reply": f"Thanks! {updated['name']} now shows {n} open {beds_word(n)}.",
+            "shelter": updated, "delta": applied}
+
+
 @bp.post("/twilio/sms")
 def sms():
     """Staff text like "2 beds open" -> change_beds(source='sms', staff_update=True)."""
-    shelters = find_shelter_by_staff_phone(request.form.get("From", ""))
-    if len(shelters) != 1:
-        return sms_reply(
-            "This number isn't set up to update a shelter on LuminestBC. "
-            "Please contact the LuminestBC team."
-        )
-    change = bed_change(parse_staff_text(request.form.get("Body", "")))
-    if change is None:
-        return sms_reply('Sorry, I couldn\'t read a bed count. Try "3 beds open", "1 more bed" or "full".')
-    with transaction() as conn:
-        updated, _ = change_beds(conn, shelters[0]["id"], source="sms", staff_update=True, **change)
-    emit_shelter_update(updated)
-    n = updated["open_beds"]
-    return sms_reply(f"Thanks! {updated['name']} now shows {n} open {beds_word(n)}.")
+    result = handle_staff_sms(request.form.get("From", ""), request.form.get("Body", ""))
+    return sms_reply(result["reply"])

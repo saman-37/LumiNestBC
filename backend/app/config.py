@@ -31,12 +31,28 @@ TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "")
+ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_flash_v2_5")  # low latency for phone calls
+
+# Base URL written onto NFC tags and staff-portal links (generate_tag_links.py, tag rotation).
+TAG_BASE_URL = os.getenv("TAG_BASE_URL", "https://luminestbc.tech").rstrip("/")
+
+# Admin / test hub (/admin, /api/admin/*, /api/dev/*). Off in production (render.yaml).
+DEV_TOOLS_ENABLED = _bool("DEV_TOOLS_ENABLED", True)
+ADMIN_KEY = os.getenv("ADMIN_KEY", "")
 
 SMS_NUDGE_ENABLED = _bool("SMS_NUDGE_ENABLED", False)
 
 # --- Tag taps --------------------------------------------------------------------
 TAG_COOLDOWN_SECONDS = 5        # same tag tapped again within this window is ignored
 UNDO_WINDOW_SECONDS = 10        # a tap can be undone for this long
+
+# --- Staff portal ----------------------------------------------------------------
+STAFF_RATE_LIMIT_PER_MINUTE = 60   # requests per shelter (and for admin) per minute
+STAFF_REVERT_WINDOW_MINUTES = 60   # tap/text/staff changes can be reverted for this long
+STAFF_EVENTS_LIMIT = 30
+
+# --- Voice audio cache -------------------------------------------------------------
+AUDIO_CACHE_TTL_SECONDS = 30 * 60  # dynamic answers; fixed phrases are kept forever
 
 # --- Holds -----------------------------------------------------------------------
 HOLD_MINUTES = 60

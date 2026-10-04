@@ -64,7 +64,49 @@ CREATE TABLE IF NOT EXISTS availability_events (
     delta           INTEGER NOT NULL,
     open_beds_after INTEGER NOT NULL,
     source          TEXT NOT NULL
-                    CHECK (source IN ('tap', 'sms', 'hold', 'arrival', 'expiry', 'undo'))
+                    CONSTRAINT availability_events_source_check
+                    CHECK (source IN ('tap', 'sms', 'staff', 'hold', 'arrival', 'expiry', 'undo'))
 );
 SELECT create_hypertable('availability_events', 'time', if_not_exists => TRUE);
 CREATE INDEX IF NOT EXISTS availability_events_shelter_idx ON availability_events (shelter_id, time DESC);
+
+-- ---------------------------------------------------------------------------------
+-- Migrations. Everything below works on a fresh database AND on an existing one.
+-- ---------------------------------------------------------------------------------
+
+-- 'staff' (the shelter staff portal) is a valid event source. Recreate the CHECK so older
+-- databases (created before 'staff' existed) accept it too.
+ALTER TABLE availability_events DROP CONSTRAINT IF EXISTS availability_events_source_check;
+ALTER TABLE availability_events ADD CONSTRAINT availability_events_source_check
+    CHECK (source IN ('tap', 'sms', 'staff', 'hold', 'arrival', 'expiry', 'undo'));
+
+-- Stable event ids so the staff portal can revert a specific change, once.
+CREATE SEQUENCE IF NOT EXISTS availability_events_id_seq;
+ALTER TABLE availability_events ADD COLUMN IF NOT EXISTS id BIGINT NOT NULL DEFAULT nextval('availability_events_id_seq');
+ALTER TABLE availability_events ADD COLUMN IF NOT EXISTS reverted_at TIMESTAMPTZ;      -- set when staff revert it
+ALTER TABLE availability_events ADD COLUMN IF NOT EXISTS reverts_event_id BIGINT;      -- set on the revert itself
+CREATE INDEX IF NOT EXISTS availability_events_id_idx ON availability_events (id);
+
+-- What last changed the count (shown as "Updated 4 min ago · Tap Board").
+ALTER TABLE shelters ADD COLUMN IF NOT EXISTS last_update_source TEXT;
+ALTER TABLE shelters DROP CONSTRAINT IF EXISTS shelters_last_update_source_check;
+ALTER TABLE shelters ADD CONSTRAINT shelters_last_update_source_check
+    CHECK (last_update_source IN ('tap', 'sms', 'staff', 'hold', 'arrival', 'expiry', 'undo'));
+
+-- Tonight's settings from the staff portal. Not accepting = no holds, not offered by voice.
+ALTER TABLE shelters ADD COLUMN IF NOT EXISTS accepting BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- Where a shelter row came from (e.g. 'vancouver_open_data'); NULL = our own curated CSV.
+ALTER TABLE shelters ADD COLUMN IF NOT EXISTS source TEXT;
+
+-- One private staff-portal key per shelter. Only a SHA-256 hash is stored.
+CREATE TABLE IF NOT EXISTS staff_keys (
+    shelter_id   TEXT PRIMARY KEY REFERENCES shelters(id) ON DELETE CASCADE,
+    key_hash     TEXT NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_used_at TIMESTAMPTZ
+);
+
+-- Free text from an imported listing (e.g. BC211's Note / Intake Info / Accessibility), so the
+-- detail view can show intake hours later. Never about a person; not in the public API yet.
+ALTER TABLE shelters ADD COLUMN IF NOT EXISTS notes TEXT;

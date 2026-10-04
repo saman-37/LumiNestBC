@@ -22,7 +22,6 @@ import { hasBeds, isOpen, matchesFilters } from '../lib/filters'
 import { getLocation, haversineKm, type LatLng } from '../lib/geo'
 import { useShelterStore } from '../lib/shelterStore'
 import type { FilterKey, Shelter } from '../lib/types'
-import { useLastSource } from '../lib/useLastSource'
 import { loadWorker, saveWorker, type Worker } from '../lib/worker'
 
 // Tier 3 wires this to /api/weather-layer.
@@ -102,7 +101,6 @@ export default function MapPage() {
   const selectedId = selected?.shelter.id ?? null
   const nextBest =
     selected && justTakenId === selectedId ? (openList.find((l) => isOpen(l.shelter) && l.shelter.id !== selectedId) ?? null) : null
-  const source = useLastSource(selectedId, selected?.shelter.last_updated_at)
 
   // ---- selection ----
   const select = useCallback(
@@ -183,6 +181,9 @@ export default function MapPage() {
         if (shelter.id !== selectedParam) setParams({ shelter: shelter.id })
         setShakeKey((k) => k + 1)
         api.shelter(shelter.id).then(upsert).catch(() => {})
+      } else if (e instanceof ApiError && e.code === 'not_accepting') {
+        toast("This shelter isn't accepting new people tonight", 'error')
+        api.shelter(shelter.id).then(upsert).catch(() => {})
       } else {
         toast("Couldn't place the hold. Check your connection and try again.", 'error')
       }
@@ -258,7 +259,6 @@ export default function MapPage() {
       key={selected.shelter.id}
       shelter={selected.shelter}
       km={selected.km}
-      source={source}
       holding={holdingId === selected.shelter.id}
       shakeKey={shakeKey}
       nextBest={nextBest}
