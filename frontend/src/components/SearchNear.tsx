@@ -7,10 +7,11 @@ interface Props {
   locating: boolean
   onSearch: (text: string) => void
   onLocate: () => void
+  onFocus?: () => void
 }
 
 /** "Searching near" field: type an area (with suggestions) or use the phone's location. */
-export function SearchNear({ label, locating, onSearch, onLocate }: Props) {
+export function SearchNear({ label, locating, onSearch, onLocate, onFocus }: Props) {
   const [text, setText] = useState(label)
   useEffect(() => setText(label), [label])
 
@@ -32,11 +33,14 @@ export function SearchNear({ label, locating, onSearch, onLocate }: Props) {
             list="search-areas"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onFocus={(e) => e.target.select()}
+            onFocus={(e) => {
+              e.target.select()
+              onFocus?.()
+            }}
             onBlur={() => text !== label && text.trim() && onSearch(text)}
             enterKeyHint="search"
             autoComplete="off"
-            className="h-11 w-full text-ellipsis rounded-[12px] border border-border bg-surface-2 pl-[30px] pr-1.5 text-[15px] text-text placeholder:text-text-muted focus:border-blue focus:outline-none"
+            className="h-11 w-full text-ellipsis rounded-[12px] border border-border bg-surface-2 pl-[30px] pr-1.5 text-[16px] text-text placeholder:text-text-muted focus:border-blue focus:outline-none"
           />
           <datalist id="search-areas">
             {AREAS.map((a) => (

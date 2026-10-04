@@ -69,3 +69,17 @@ const SOURCE_LABELS: Record<EventSource, string> = {
 export function sourceLabel(source: EventSource | null | undefined): string | null {
   return source ? SOURCE_LABELS[source] : null
 }
+
+/** "604-264-1680" -> "tel:+16042641680" (tap-to-call works the same on iOS and Android). */
+export function telHref(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 10) return `tel:+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `tel:+${digits}`
+  return `tel:${digits}`
+}
+
+/** "6042641680" or "+1 604 264 1680" -> "604-264-1680" for display. */
+export function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '')
+  return digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : phone
+}

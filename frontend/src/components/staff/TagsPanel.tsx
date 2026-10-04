@@ -4,6 +4,7 @@ import { formatAgo } from '../../lib/format'
 import type { TagAction, TagLink } from '../../lib/types'
 import { Button } from '../Button'
 import { useToast } from '../Toast'
+import { PrintSheet } from './PrintSheet'
 import { ConfirmRow, Section } from './Section'
 
 function status(tag: TagLink): string {
@@ -105,16 +106,7 @@ export function TagsPanel({ shelterName, tags, busy, onRotate }: Props) {
       </ul>
 
       {/* Only this sheet prints (see .print-sheet in index.css). */}
-      <div className="print-sheet" aria-hidden>
-        <h1>{shelterName}: Tap Board links</h1>
-        <p>Write each link onto its NFC tag with NFC Tools (Write → URL). Keep this sheet private.</p>
-        {tags.map((tag) => (
-          <div key={tag.action} className="print-tag">
-            <h2>{tag.label}</h2>
-            <p>{tag.url ?? 'Not set up yet'}</p>
-          </div>
-        ))}
-      </div>
+      <PrintSheet shelterName={shelterName} tags={tags} />
     </Section>
   )
 }

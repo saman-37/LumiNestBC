@@ -34,7 +34,7 @@ export function LivePill() {
 export function AppHeader({ variant = 'solid' }: { variant?: 'solid' | 'glass' | 'bare' }) {
   const look = {
     solid: 'border-b border-border bg-surface',
-    glass: 'border-b border-border bg-surface/90 shadow-[var(--shadow-card)] backdrop-blur-md',
+    glass: 'glass-bar border-b border-border shadow-[var(--shadow-card)]',
     bare: '',
   }[variant]
   return (

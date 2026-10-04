@@ -190,11 +190,16 @@ export default function MapPage() {
     }
   }
 
-  function requestHold(shelter: Shelter) {
+  // Stable identity (reads the latest state through a ref) so memoised list cards skip re-renders.
+  const requestHoldRef = useRef((shelter: Shelter) => {
+    void shelter
+  })
+  requestHoldRef.current = (shelter: Shelter) => {
     const worker = loadWorker()
     if (worker) hold(shelter, worker)
     else setPendingHold(shelter)
   }
+  const requestHold = useCallback((shelter: Shelter) => requestHoldRef.current(shelter), [])
 
   // ---- pieces ----
   const heights = snapHeights(vh, topPx)
@@ -204,7 +209,13 @@ export default function MapPage() {
 
   const controls = (
     <>
-      <SearchNear label={originLabel} locating={locating} onSearch={search} onLocate={locate} />
+      <SearchNear
+        label={originLabel}
+        locating={locating}
+        onSearch={search}
+        onLocate={locate}
+        onFocus={() => !desktop && setSnap('peek')} // keep the field and suggestions above the keyboard
+      />
       <FilterBar active={filters} onToggle={toggleFilter} onOpenSheet={() => setFilterSheet(true)} />
       <div className="px-4 pb-3 pt-1 empty:hidden">
         {WEATHER_MODE && <WeatherBanner />}
@@ -274,11 +285,11 @@ export default function MapPage() {
   )
 
   const ctrlBtn =
-    'grid h-10 w-10 place-items-center rounded-[10px] border border-border bg-surface text-text shadow-[var(--shadow-float)] hover:bg-surface-2'
+    'grid h-11 w-11 place-items-center rounded-[10px] border border-border bg-surface text-text shadow-[var(--shadow-float)] hover:bg-surface-2'
   const mapControls = (
     <div
-      className="absolute right-3 z-[950] flex flex-col gap-2 transition-[top] duration-300"
-      style={{ top: desktop ? DESKTOP_MARGIN : topPx + 12, right: desktop ? DESKTOP_MARGIN : 12 }}
+      className="absolute top-0 right-3 z-[950] flex flex-col gap-2 transition-transform duration-300 will-change-transform"
+      style={{ transform: `translateY(${desktop ? DESKTOP_MARGIN : topPx + 12}px)`, right: desktop ? DESKTOP_MARGIN : 12 }}
     >
       <button type="button" aria-label="Show my location" onClick={locate} disabled={locating} className={`${ctrlBtn} text-blue`}>
         <LocateFixed aria-hidden size={20} className={locating ? 'animate-pulse' : ''} />
@@ -327,8 +338,8 @@ export default function MapPage() {
         </>
       ) : (
         <div
-          className="pointer-events-none absolute inset-x-3 z-[900] flex flex-col items-start gap-1 transition-[bottom] duration-300"
-          style={{ bottom: sheetPx + 8 }}
+          className="pointer-events-none absolute inset-x-3 bottom-0 z-[900] flex flex-col items-start gap-1 transition-transform duration-300"
+          style={{ transform: `translateY(-${sheetPx + 8}px)` }}
         >
           <DemoBadge />
           {attribution && (

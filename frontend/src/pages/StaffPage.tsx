@@ -7,7 +7,7 @@ import { CountPanel } from '../components/staff/CountPanel'
 import { HoldsList } from '../components/staff/HoldsList'
 import { SettingsPanel } from '../components/staff/SettingsPanel'
 import { TagsPanel } from '../components/staff/TagsPanel'
-import { FreshnessPill, Skeleton } from '../components/Status'
+import { Skeleton } from '../components/Status'
 import { useToast } from '../components/Toast'
 import { api, ApiError, staffApi, type StaffAuth } from '../lib/api'
 import { bedsWord } from '../lib/filters'
@@ -165,10 +165,7 @@ export default function StaffPage() {
   return (
     <PageShell>
       <p className="text-[13px] uppercase tracking-wide text-text-muted">Staff view{'adminKey' in auth ? ' · admin' : ''}</p>
-      <div className="mt-0.5 flex items-start justify-between gap-3">
-        <h1 className="min-w-0 break-words font-display text-[22px] font-bold leading-tight">{shelter.name}</h1>
-        <FreshnessPill freshness={shelter.freshness} />
-      </div>
+      <h1 className="mt-0.5 break-words font-display text-[22px] font-bold leading-tight">{shelter.name}</h1>
 
       <div className="mt-4 grid gap-4">
         <CountPanel

@@ -43,3 +43,24 @@ def test_freshness_field(client, db):
     assert by_id["aging"]["freshness"] == "amber"
     assert by_id["stale"]["freshness"] == "red"
     assert by_id["stale"]["minutes_since_update"] >= 239
+
+
+def test_public_phone_shown_for_shelters_but_never_for_dv(client, db):
+    add_shelter(db, "shelter-01", public_phone="604-264-1680")
+    add_shelter(db, "dv", is_dv=True, address=None, lat=None, lng=None, dv_phone="604-555-0199",
+                public_phone="604-555-0000")
+    shelters = {s["id"]: s for s in client.get("/api/shelters").json["shelters"]}
+    assert shelters["shelter-01"]["public_phone"] == "604-264-1680"
+    assert shelters["dv"]["public_phone"] is None and shelters["dv"]["dv_phone"] == "604-555-0199"
+
+
+def test_large_api_responses_are_gzipped_when_asked(client, db):
+    import gzip
+    import json
+    for i in range(30):
+        add_shelter(db, f"shelter-{i:02d}")
+    plain = client.get("/api/shelters")
+    assert "Content-Encoding" not in plain.headers
+    zipped = client.get("/api/shelters", headers={"Accept-Encoding": "gzip, br"})
+    assert zipped.headers["Content-Encoding"] == "gzip" and "Accept-Encoding" in zipped.headers["Vary"]
+    assert json.loads(gzip.decompress(zipped.data))["shelters"] == plain.json["shelters"]

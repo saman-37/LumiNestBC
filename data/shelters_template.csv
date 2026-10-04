@@ -1,4 +1,4 @@
-id,name,address,lat,lng,capacity,open_beds,is_full,women_only,youth,families,pets_ok,accessible,couples,is_dv,dv_phone,staff_phone,last_updated_at
-shelter-01,Example Lantern House (FICTIONAL),100 Example St Vancouver BC,49.2812,-123.0995,40,3,false,false,false,false,true,true,false,false,,604-555-0101,
-shelter-02,Example Whalley Women's Place (FICTIONAL),200 Example Ave Surrey BC,49.1900,-122.8480,20,1,false,true,false,false,false,true,false,false,,604-555-0102,
-shelter-03,Example Safe Haven DV (FICTIONAL),,,,12,2,false,true,false,true,false,false,false,true,604-555-0199,,
+id,name,address,lat,lng,capacity,open_beds,is_full,women_only,youth,families,pets_ok,accessible,couples,is_dv,dv_phone,staff_phone,public_phone,last_updated_at
+shelter-01,Example Lantern House (FICTIONAL),100 Example St Vancouver BC,49.2812,-123.0995,40,3,false,false,false,false,true,true,false,false,,604-555-0101,,
+shelter-02,Example Whalley Women's Place (FICTIONAL),200 Example Ave Surrey BC,49.1900,-122.8480,20,1,false,true,false,false,false,true,false,false,,604-555-0102,,
+shelter-03,Example Safe Haven DV (FICTIONAL),,,,12,2,false,true,false,true,false,false,false,true,604-555-0199,,,

@@ -1,7 +1,8 @@
-import { divIcon, latLngBounds, type Map as LeafletMap } from 'leaflet'
+import { divIcon, latLngBounds, Marker as LMarker, type Map as LeafletMap } from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import type { Ref } from 'react'
 import { useReducedMotion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLng } from '../../lib/geo'
 import type { Shelter } from '../../lib/types'
@@ -155,6 +156,37 @@ function Lights({ markers, visibleIds, selectedId, bumped, distances, touch, ins
   }, [map])
   useEffect(() => setZoom(Math.round(map.getZoom())), [map, markers])
 
+  // Glow / pulse animations cost GPU time even off-screen: pause them for pins outside the view,
+  // and for every pin while the map is being dragged or zoomed.
+  useEffect(() => {
+    const container = map.getContainer()
+    const markOffscreen = () => {
+      const view = map.getBounds().pad(0.15)
+      map.eachLayer((layer) => {
+        if (layer instanceof LMarker) layer.getElement()?.classList.toggle('is-offscreen', !view.contains(layer.getLatLng()))
+      })
+    }
+    const moving = () => container.classList.add('map-moving')
+    const settled = () => {
+      container.classList.remove('map-moving')
+      markOffscreen()
+    }
+    markOffscreen()
+    map.on('movestart zoomstart', moving)
+    map.on('moveend zoomend', settled)
+    return () => {
+      map.off('movestart zoomstart', moving)
+      map.off('moveend zoomend', settled)
+    }
+  }, [map])
+  // New or re-iconed markers start without the class: re-check after each render settles.
+  useEffect(() => {
+    const view = map.getBounds().pad(0.15)
+    map.eachLayer((layer) => {
+      if (layer instanceof LMarker) layer.getElement()?.classList.toggle('is-offscreen', !view.contains(layer.getLatLng()))
+    })
+  })
+
   const clusters = useMemo(() => {
     if (zoom >= SELECT_ZOOM) return []
     const pool = markers.filter((s) => visibleIds.has(s.id) && s.id !== selectedId)
@@ -162,16 +194,23 @@ function Lights({ markers, visibleIds, selectedId, bumped, distances, touch, ins
   }, [map, markers, visibleIds, selectedId, zoom])
   const clustered = new Set(clusters.flatMap((c) => c.members.map((s) => s.id)))
 
-  function zoomInto(cluster: Cluster) {
-    const bounds = latLngBounds(cluster.members.map((s) => [s.lat!, s.lng!] as [number, number]))
-    map.flyToBounds(bounds, {
-      paddingTopLeft: [insets.left + 64, insets.top + 64],
-      paddingBottomRight: [64, insets.bottom + 64],
-      maxZoom: SELECT_ZOOM,
-      animate: !reduce,
-      duration: 0.8,
-    })
-  }
+  // Stable callback (reads the latest insets) so memoised cluster markers don't re-render.
+  const latestInsets = useRef(insets)
+  latestInsets.current = insets
+  const zoomInto = useCallback(
+    (cluster: Cluster) => {
+      const pad = latestInsets.current
+      const bounds = latLngBounds(cluster.members.map((s) => [s.lat!, s.lng!] as [number, number]))
+      map.flyToBounds(bounds, {
+        paddingTopLeft: [pad.left + 64, pad.top + 64],
+        paddingBottomRight: [64, pad.bottom + 64],
+        maxZoom: SELECT_ZOOM,
+        animate: !reduce,
+        duration: 0.8,
+      })
+    },
+    [map, reduce],
+  )
 
   return (
     <>
@@ -212,11 +251,15 @@ export function MapView(props: Props) {
   // Hover place card: appears after a short delay, hides immediately on leave.
   const [hoverId, setHoverId] = useState<string | null>(null)
   const timer = useRef<number | undefined>(undefined)
-  const onHover = (id: string | null) => {
-    window.clearTimeout(timer.current)
-    if (id === null || touch) setHoverId(null)
-    else timer.current = window.setTimeout(() => setHoverId(id), HOVER_DELAY_MS)
-  }
+  // Stable, so memoised markers don't re-render on every map render.
+  const onHover = useCallback(
+    (id: string | null) => {
+      window.clearTimeout(timer.current)
+      if (id === null || touch) setHoverId(null)
+      else timer.current = window.setTimeout(() => setHoverId(id), HOVER_DELAY_MS)
+    },
+    [touch],
+  )
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
   return (

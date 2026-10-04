@@ -2,7 +2,7 @@ import { Minus, Plus } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { bedsWord } from '../../lib/filters'
 import { formatAgo } from '../../lib/format'
-import type { EventSource, Shelter } from '../../lib/types'
+import type { EventSource, Freshness, Shelter } from '../../lib/types'
 import { AnimatedNumber } from '../AnimatedNumber'
 import { Button } from '../Button'
 
@@ -25,6 +25,10 @@ const SOURCE_PHRASES: Record<EventSource, string> = {
   arrival: 'the Arrival tag',
   expiry: 'a hold expiring',
 }
+
+// The one freshness indicator on this page: green under 1 h, amber to 3 h, red after.
+const FRESH_TEXT: Record<Freshness, string> = { green: 'text-green-text', amber: 'text-amber-text', red: 'text-red-text' }
+const FRESH_DOT: Record<Freshness, string> = { green: 'bg-green', amber: 'bg-amber', red: 'bg-red' }
 
 const STEP =
   'grid h-14 w-14 shrink-0 place-items-center rounded-[14px] border border-border-strong bg-surface text-text ' +
@@ -70,9 +74,12 @@ export function CountPanel({ shelter, busy, onAdjust, onSetCount, onFull, onReop
           Not accepting new people tonight (see settings below)
         </p>
       )}
-      <p className="mt-3 text-center text-[13px] text-text-muted">
-        Last update {formatAgo(shelter.minutes_since_update)}
-        {phrase && `, from ${phrase}`}
+      <p className={`mt-3 flex items-start justify-center gap-1.5 text-center text-[13px] font-medium ${FRESH_TEXT[shelter.freshness]}`}>
+        <span aria-hidden className={`mt-[5px] h-2 w-2 shrink-0 rounded-full ${FRESH_DOT[shelter.freshness]}`} />
+        <span>
+          Updated {formatAgo(shelter.minutes_since_update)}
+          {phrase && `, from ${phrase}`}
+        </span>
       </p>
 
       <form onSubmit={save} className="mt-4 flex items-end gap-2">

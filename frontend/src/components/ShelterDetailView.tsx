@@ -2,13 +2,13 @@ import { ArrowRight, Copy, Navigation, Phone } from 'lucide-react'
 import { useAnimate } from 'motion/react'
 import { useEffect } from 'react'
 import { bedsWord, shelterState } from '../lib/filters'
-import { formatKm, formatWalk, sourceLabel } from '../lib/format'
+import { formatKm, formatPhone, formatWalk, sourceLabel, telHref } from '../lib/format'
 import type { Shelter } from '../lib/types'
 import { AnimatedNumber } from './AnimatedNumber'
 import { Button, LinkButton } from './Button'
 import type { ListedShelter } from './ShelterCard'
 import { ShelterPhoto } from './ShelterPhoto'
-import { FreshnessLine, FreshnessPill, RestrictionChips } from './Status'
+import { FreshnessLine, RestrictionChips } from './Status'
 import { useToast } from './Toast'
 
 interface Props {
@@ -34,7 +34,7 @@ export function ShelterDetailView({ shelter, km, holding, shakeKey, nextBest, on
   const state = shelterState(shelter)
   const open = state === 'open' || state === 'open-one'
   const beds = state === 'full' ? 0 : shelter.open_beds
-  const canHold = shelter.open_beds > 0 && !shelter.is_full && shelter.accepting // stale counts can still be held
+  const canHold = shelter.open_beds > 0 && !shelter.is_full && shelter.accepting
   const directions = directionsUrl(shelter)
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export function ShelterDetailView({ shelter, km, holding, shakeKey, nextBest, on
 
   return (
     <div ref={scope} className="pb-2">
-      <div className="mb-3">
+      <div className="mb-3 empty:hidden">
         <ShelterPhoto shelter={shelter} size="lg" />
       </div>
       <h2 className="break-words font-display text-[22px] font-bold leading-tight">{shelter.name}</h2>
@@ -75,19 +75,17 @@ export function ShelterDetailView({ shelter, km, holding, shakeKey, nextBest, on
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-3 rounded-[16px] border border-border bg-surface-2 p-4">
+      <div className="mt-4 rounded-[16px] border border-border bg-surface-2 p-4">
         <div className="flex items-end gap-2">
           <AnimatedNumber
             value={beds}
-            suffix={state === 'stale' ? '?' : ''}
             className={`font-display text-[56px] font-bold tracking-[-0.02em] leading-[0.9] ${open ? 'text-green-text' : 'text-text-muted'}`}
           />
           <span className="pb-1 text-[15px] text-text-3">
-            {state === 'stale' ? 'unconfirmed' : state === 'full' ? 'full tonight' : `${bedsWord(beds)} open`}
+            {!shelter.accepting ? 'not accepting tonight' : state === 'full' ? 'full tonight' : `${bedsWord(beds)} open`}
           </span>
         </div>
-        <FreshnessPill freshness={shelter.freshness} />
-        <div className="w-full">
+        <div className="mt-2">
           <FreshnessLine shelter={shelter} source={sourceLabel(shelter.last_update_source)} />
         </div>
       </div>
@@ -101,8 +99,13 @@ export function ShelterDetailView({ shelter, km, holding, shakeKey, nextBest, on
           {holding ? 'Holding…' : canHold ? 'Hold a bed for 60 min' : shelter.accepting ? 'Full tonight' : 'Not accepting tonight'}
         </Button>
         <div className="grid grid-cols-2 gap-2.5">
-          {shelter.staff_phone ? (
-            <LinkButton variant="outline" size="md" href={`tel:${shelter.staff_phone}`}>
+          {shelter.public_phone ? (
+            <LinkButton
+              variant="outline"
+              size="md"
+              href={telHref(shelter.public_phone)}
+              aria-label={`Call ${shelter.name} at ${formatPhone(shelter.public_phone)}`}
+            >
               <Phone aria-hidden size={18} /> Call
             </LinkButton>
           ) : (

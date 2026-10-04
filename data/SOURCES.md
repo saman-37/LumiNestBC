@@ -6,6 +6,8 @@
 | `shelters.csv` (rows `shelter-01` to `shelter-21`) | Compiled by the team from public listings of Metro Vancouver shelters (names and street addresses), geocoded with OpenStreetMap Nominatim. Two rows are fictional demo shelters. Counts are not real. | Facts only (names, public addresses). Coordinates © OpenStreetMap contributors, ODbL. |
 | Rows with `source = 'vancouver_open_data'` | City of Vancouver Open Data Portal, dataset **"Homeless shelter locations"** (https://opendata.vancouver.ca), downloaded manually and loaded with `scripts/import_open_data.py`. Phone numbers are not imported. | Open Government Licence – Vancouver (https://opendata.vancouver.ca/pages/licence/). Attribution: "Contains information licensed under the Open Government Licence – Vancouver." |
 | Rows with `source = 'bc211'`, `bc211_shelters.csv`, and the `notes` of matched shelters | **BC211 shelter list** PDFs (`data/bc211/`), used **with permission from BC211**. Permission granted by: _[name, role at BC211]_ on _[date]_. PDFs downloaded on: _[date]_. Parsed with `scripts/import_bc211.py`; names, cities, addresses, eligibility flags and Note / Intake / Accessibility text are imported. Phone numbers are not imported. | Used with BC211's permission (above); not an open licence. Ask BC211 before reusing it elsewhere. |
+| `shelters.csv` column `public_phone`, and `shelter_public_phones.csv` | Each shelter's public front-desk number. **Source: _[fill in where these numbers came from, e.g. each shelter's own website]_.** Merged by id (names double-checked) with `scripts/import_public_phones.py`. Shown only on the Call button; never used to send texts (real shelters never receive automated texts) and never stored for DV shelters. | _[fill in]_ |
+| Coordinates of `shelter-63` and `shelter-64` in `shelters.csv` | Geocoded from their street addresses with OpenStreetMap Nominatim (`shelter-63` resolved as "231 Regina Avenue, Saanich"; `shelter-64` as "650 Old Hope Princeton Way, Hope"). | © OpenStreetMap contributors, ODbL. |
 | `geocode_cache.json` | OpenStreetMap Nominatim answers for the BC211 import (1 request per second, cached so re-runs don't repeat requests). | Coordinates © OpenStreetMap contributors, ODbL. |
 | `area_centres.json` | Approximate neighbourhood centres picked by the team. | Ours. |
 
@@ -20,5 +22,5 @@ LuminestBC (or from `scripts/reset_demo.py` in demos).
 domestic-violence / transition house / safe house. Both importers skip records that look like
 one (the BC211 importer lists them in its summary and writes them nowhere).
 
-Bed counts are never imported: every imported shelter starts at 0 beds and "unconfirmed" until
-its staff update it (Tap Board, text, or the staff portal).
+Bed counts are never imported: every imported shelter starts at 0 beds until its staff update it
+(Tap Board, text, or the staff portal).

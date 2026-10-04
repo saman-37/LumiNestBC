@@ -10,7 +10,7 @@ from . import config
 _PUBLIC_FIELDS = (
     "id", "name", "address", "lat", "lng", "capacity", "open_beds", "is_full",
     "women_only", "youth", "families", "pets_ok", "accessible", "couples",
-    "is_dv", "dv_phone", "staff_phone", "accepting", "last_update_source",
+    "is_dv", "dv_phone", "staff_phone", "public_phone", "accepting", "last_update_source",
 )
 
 
@@ -46,7 +46,7 @@ def public_shelter(row: dict, now: datetime | None = None) -> dict:
     data["minutes_since_update"] = minutes
     data["freshness"] = freshness_for(minutes)
     if row["is_dv"]:
-        data.update(address=None, lat=None, lng=None, staff_phone=None)
+        data.update(address=None, lat=None, lng=None, staff_phone=None, public_phone=None)
     else:
         data["dv_phone"] = None
     return data

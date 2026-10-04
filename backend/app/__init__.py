@@ -1,5 +1,6 @@
-from pathlib import Path
-from flask import Flask, send_from_directory
+import gzip
+
+from flask import Flask, request, send_from_directory
 from flask_cors import CORS
 
 from . import config
@@ -22,6 +23,21 @@ def create_app(database_url: str | None = None) -> Flask:
 
     for bp in (shelters_bp, tags_bp, holds_bp, staff_bp, admin_bp, tier3_bp, comms_bp):
         app.register_blueprint(bp)
+
+    @app.after_request
+    def compress_json(response):
+        """Gzip larger API responses (/api/shelters is ~46 KB raw, ~5 KB gzipped): phones on slow
+        data get the map list much sooner. Socket.IO traffic doesn't pass through here."""
+        if (request.path.startswith("/api/") and response.mimetype == "application/json"
+                and "gzip" in request.headers.get("Accept-Encoding", "")
+                and not response.direct_passthrough and "Content-Encoding" not in response.headers):
+            data = response.get_data()
+            if len(data) > 1024:
+                response.set_data(gzip.compress(data, compresslevel=5))
+                response.headers["Content-Encoding"] = "gzip"
+                response.headers["Content-Length"] = str(len(response.get_data()))
+                response.vary.add("Accept-Encoding")
+        return response
 
     @app.get("/health")
     def health():

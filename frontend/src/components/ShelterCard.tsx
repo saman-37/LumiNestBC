@@ -1,8 +1,8 @@
 import { Phone, ShieldCheck } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { bedsWord, FILTERS, shelterState } from '../lib/filters'
-import { formatKm, sourceLabel } from '../lib/format'
+import { formatKm, sourceLabel, telHref } from '../lib/format'
 import type { Shelter } from '../lib/types'
 import { AnimatedNumber } from './AnimatedNumber'
 import { Button, LinkButton } from './Button'
@@ -15,11 +15,11 @@ export interface ListedShelter {
 }
 
 // Cards collapse out of the list (height + fade) when a filter hides them. Clipping is only
-// on while animating, so the card shadow isn't cut off at rest.
+// on while animating, so the card shadow isn't cut off at rest. No `layout` prop: layout
+// projection re-measures every card on every live update, which stutters on mid-range phones.
 function useCollapse() {
   const [clip, setClip] = useState(false) // cards present on first render never animate
   return {
-    layout: true,
     initial: { opacity: 0, height: 0 },
     animate: { opacity: 1, height: 'auto' },
     exit: { opacity: 0, height: 0 },
@@ -44,13 +44,19 @@ interface CardProps {
   onHold: (shelter: Shelter) => void
 }
 
-export function ShelterCard({ item: { shelter, km }, best, holding, onSelect, onHold }: CardProps) {
+/**
+ * One shelter in the list. Memoised: a socket update re-renders only the card whose shelter
+ * changed (items are rebuilt on every update, so compare the shelter object and distance).
+ */
+export const ShelterCard = memo(ShelterCardView, (a, b) =>
+  a.item.shelter === b.item.shelter && a.item.km === b.item.km && a.best === b.best &&
+  a.holding === b.holding && a.onSelect === b.onSelect && a.onHold === b.onHold)
+
+function ShelterCardView({ item: { shelter, km }, best, holding, onSelect, onHold }: CardProps) {
   const collapse = useCollapse()
   const state = shelterState(shelter)
   const open = state === 'open' || state === 'open-one'
-  const caption = !shelter.accepting
-    ? 'not accepting'
-    : state === 'stale' ? 'unconfirmed' : state === 'full' ? 'full tonight' : `${bedsWord(shelter.open_beds)} open`
+  const caption = !shelter.accepting ? 'not accepting' : state === 'full' ? 'full tonight' : `${bedsWord(shelter.open_beds)} open`
 
   return (
     <motion.li {...collapse}>
@@ -67,16 +73,14 @@ export function ShelterCard({ item: { shelter, km }, best, holding, onSelect, on
           <span className="shrink-0 text-right">
             <AnimatedNumber
               value={state === 'full' ? 0 : shelter.open_beds}
-              suffix={state === 'stale' ? '?' : ''}
               className={`block font-display text-[30px] font-bold leading-none ${open ? 'text-green-text' : 'text-text-muted'}`}
             />
             <span className="mt-1 block text-[13px] text-text-muted">{caption}</span>
           </span>
         </button>
 
-        {state !== 'full' && (
-        <div className="mt-3">
-          {open && (
+        {open && (
+          <div className="mt-3">
             <Button
               variant={best ? 'primary' : 'outline-green'}
               size={best ? 'lg' : 'md'}
@@ -85,16 +89,7 @@ export function ShelterCard({ item: { shelter, km }, best, holding, onSelect, on
             >
               {holding ? 'Holding…' : 'Hold a bed for 60 min'}
             </Button>
-          )}
-          {state === 'stale' &&
-            (shelter.staff_phone ? (
-              <LinkButton variant="outline" size="md" href={`tel:${shelter.staff_phone}`}>
-                <Phone aria-hidden size={18} /> Call to confirm
-              </LinkButton>
-            ) : (
-              <p className="py-2 text-center text-[15px] font-medium text-text-muted">Count unconfirmed</p>
-            ))}
-        </div>
+          </div>
         )}
       </article>
     </motion.li>
@@ -102,7 +97,7 @@ export function ShelterCard({ item: { shelter, km }, best, holding, onSelect, on
 }
 
 /** DV shelters: no distance, no address, no hold. Just a way to call. */
-export function DvCard({ shelter }: { shelter: Shelter }) {
+export const DvCard = memo(function DvCard({ shelter }: { shelter: Shelter }) {
   const collapse = useCollapse()
   const available = shelter.open_beds > 0 && !shelter.is_full
   return (
@@ -118,11 +113,11 @@ export function DvCard({ shelter }: { shelter: Shelter }) {
           </div>
         </div>
         {shelter.dv_phone && (
-          <LinkButton variant="outline" size="md" href={`tel:${shelter.dv_phone}`} className="mt-3 border-blue bg-surface text-blue-light hover:bg-blue-tint">
+          <LinkButton variant="outline" size="md" href={telHref(shelter.dv_phone)} className="mt-3 border-blue bg-surface text-blue-light hover:bg-blue-tint">
             <Phone aria-hidden size={18} /> Call {shelter.dv_phone}
           </LinkButton>
         )}
       </article>
     </motion.li>
   )
-}
+})

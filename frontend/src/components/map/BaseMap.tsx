@@ -1,6 +1,5 @@
 import type { MaplibreGL } from 'leaflet'
 import type { StyleSpecification } from 'maplibre-gl'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useState } from 'react'
 import { TileLayer, useMap } from 'react-leaflet'
 import { loadMapStyle, VECTOR_ATTRIBUTION } from '../../lib/mapStyle'
@@ -15,22 +14,30 @@ const FALLBACK_ATTRIBUTION = CARTO_KEY ? '© OpenStreetMap contributors © CARTO
 function VectorLayer({ style }: { style: StyleSpecification }) {
   const map = useMap()
   useEffect(() => {
-    // MapLibre is large, so it's loaded only when the map page needs it.
+    // MapLibre is large (≈1 MB) and its WebGL setup is the heaviest work on the page, so it starts
+    // only once the pins and list have painted and the browser is idle. Until then the map shows
+    // its land colour with the pins already on it.
     let layer: MaplibreGL | null = null
     let cancelled = false
-    Promise.all([
+    const load = () => Promise.all([
       import('@maplibre/maplibre-gl-leaflet'),
+      import('maplibre-gl/dist/maplibre-gl.css'), // ~60 KB of CSS, only needed once MapLibre runs
       import('maplibre-gl'),
       // Bundled by Vite into one worker file; MapLibre's own relative worker URL breaks once bundled.
       import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'),
-    ]).then(([{ maplibreGL }, maplibre, worker]) => {
+    ]).then(([{ maplibreGL }, , maplibre, worker]) => {
       if (cancelled) return
       maplibre.setWorkerUrl(worker.default)
       layer = maplibreGL({ style, attributionControl: false })
       layer.addTo(map)
     })
+    // Safari has no requestIdleCallback: a short timeout does the same job there.
+    const idle = 'requestIdleCallback' in window
+    const handle = idle ? window.requestIdleCallback(load, { timeout: 1500 }) : window.setTimeout(load, 300)
     return () => {
       cancelled = true
+      if (idle) window.cancelIdleCallback(handle)
+      else window.clearTimeout(handle)
       layer?.remove()
     }
   }, [map, style])
