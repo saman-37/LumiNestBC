@@ -24,6 +24,8 @@ PORT = 5173
 SHELTER_ID = "shelter-01"
 CSV_OUT = ROOT / "data" / "tag_links_lan.csv"
 HTML_OUT = ROOT / "data" / "tag_links_lan.html"
+LABELS = {"freed": "Bed freed (+1)", "filled": "Bed filled (-1)", "full": "We're full (0)",
+          "arrive": "Arrival (by the door)"}
 
 
 def usable(ip: str) -> bool:
@@ -79,13 +81,12 @@ def generate_links(base: str) -> list[dict]:
         raise SystemExit("generate_tag_links.py failed. Is the database running (docker compose up -d)?")
     print(result.stdout.strip().splitlines()[-1])
     with open(CSV_OUT, newline="") as f:
-        rows = [r for r in csv.DictReader(f) if r["shelter_id"] == SHELTER_ID]
-    order = {a: i for i, a in enumerate(TAG_ACTIONS)}
-    rows.sort(key=lambda r: order[r["action"]])
-    if len(rows) != len(TAG_ACTIONS):
-        raise SystemExit(f"Expected {len(TAG_ACTIONS)} links for {SHELTER_ID}, got {len(rows)}. "
-                         "Run scripts/import_shelters.py first.")
-    return rows
+        shelter = next((r for r in csv.DictReader(f) if r["shelter_id"] == SHELTER_ID), None)
+    if shelter is None:
+        raise SystemExit(f"No links for {SHELTER_ID}. Run scripts/import_shelters.py first.")
+    # One CSV row per shelter, with a <action>_url column per tag.
+    return [{"shelter_name": shelter["shelter_name"], "action": a, "label": LABELS[a],
+             "url": shelter[f"{a}_url"]} for a in TAG_ACTIONS]
 
 
 def card(label: str, url: str) -> str:
