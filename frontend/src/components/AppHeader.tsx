@@ -44,11 +44,3 @@ export function AppHeader({ variant = 'solid' }: { variant?: 'solid' | 'glass' |
     </header>
   )
 }
-
-export function DemoBadge() {
-  return (
-    <span className="inline-flex rounded-full border border-border bg-surface px-2 py-0.5 text-[13px] font-semibold text-text-muted shadow-[var(--shadow-card)]">
-      Demo data
-    </span>
-  )
-}

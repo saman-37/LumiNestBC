@@ -3,7 +3,7 @@ import { ArrowLeft, LocateFixed, Mic, Minus, Plus } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { AppHeader, DemoBadge } from '../components/AppHeader'
+import { AppHeader } from '../components/AppHeader'
 import { BottomSheet, PEEK_HEIGHT, snapHeights, type Snap } from '../components/BottomSheet'
 import { FilterBar, FilterSheet } from '../components/Filters'
 import { MapView } from '../components/map/MapView'
@@ -348,7 +348,6 @@ export default function MapPage() {
       {desktop ? (
         <>
           <div className="pointer-events-none absolute bottom-3 z-[900] flex items-center gap-2" style={{ left: DESKTOP_PANEL + DESKTOP_MARGIN * 2 }}>
-            <DemoBadge />
             <button
               type="button"
               onClick={() => setVoiceOpen(true)}
@@ -370,7 +369,6 @@ export default function MapPage() {
           style={{ transform: `translateY(-${sheetPx + 8}px)` }}
         >
           <div className="flex items-center gap-2">
-            <DemoBadge />
             <button
               type="button"
               onClick={() => setVoiceOpen(true)}
