@@ -1,5 +1,5 @@
 import { divIcon, type Marker as LeafletMarker } from 'leaflet'
-import { useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import { Marker } from 'react-leaflet'
 import { clusterSummary, type Cluster } from '../../lib/cluster'
 import { bedsWord } from '../../lib/filters'
@@ -12,10 +12,11 @@ interface Props {
 }
 
 /** Several nearby shelters drawn as one light: total confirmed beds, with a shelter count badge. */
-export function ClusterMarker({ cluster, dimmed, bumped, onZoom }: Props) {
+export const ClusterMarker = memo(function ClusterMarker({ cluster, dimmed, bumped, onZoom }: Props) {
   const ref = useRef<LeafletMarker>(null)
   const { state, label, open } = clusterSummary(cluster.members)
   const count = cluster.members.length
+  const handlers = useMemo(() => ({ click: () => onZoom(cluster) }), [onZoom, cluster])
 
   const icon = useMemo(
     () =>
@@ -31,18 +32,21 @@ export function ClusterMarker({ cluster, dimmed, bumped, onZoom }: Props) {
     [state, label, count, bumped],
   )
 
+  const title = `${count} shelters here, ${open} ${bedsWord(open)} open. Zoom in`
   useEffect(() => {
-    ref.current?.getElement()?.classList.toggle('is-dimmed', dimmed)
-  }, [icon, dimmed])
+    const el = ref.current?.getElement()
+    el?.classList.toggle('is-dimmed', dimmed)
+    el?.setAttribute('aria-label', title) // Leaflet's alt only applies to image icons
+  }, [icon, dimmed, title])
 
   return (
     <Marker
       ref={ref}
       position={[cluster.lat, cluster.lng]}
       icon={icon}
-      alt={`${count} shelters here, ${open} ${bedsWord(open)} open. Zoom in`}
+      alt={title}
       zIndexOffset={open > 0 ? 300 : 100}
-      eventHandlers={{ click: () => onZoom(cluster) }}
+      eventHandlers={handlers}
     />
   )
-}
+})

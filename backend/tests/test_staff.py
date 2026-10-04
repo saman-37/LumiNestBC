@@ -178,3 +178,16 @@ def test_public_shelter_has_last_update_source(client, db):
     client.post("/api/holds", json={"shelter_id": "shelter-01", "worker_name": "Sam", "worker_org": "Org"})
     s = client.get("/api/shelters/shelter-01").json["shelter"]
     assert s["last_update_source"] == "hold" and s["accepting"] is True
+
+
+def test_activity_names_the_worker_for_hold_and_arrival(client, db):
+    add_shelter(db, open_beds=2)
+    headers = add_staff_key(db)
+    hold = client.post("/api/holds", json={"shelter_id": "shelter-01", "worker_name": "Manjari",
+                                           "worker_org": "SFU"}).json["hold"]
+    assert client.post(f"/api/holds/{hold['id']}/arrive").status_code == 200
+    events = client.get("/api/staff/shelter-01", headers=headers).json["events"]
+    arrival, held = events[0], events[1]
+    assert arrival["source"] == "arrival" and arrival["delta"] == 0
+    assert arrival["hold"] == {"id": hold["id"], "worker_name": "Manjari", "worker_org": "SFU"}
+    assert held["source"] == "hold" and held["delta"] == -1 and held["hold"]["worker_name"] == "Manjari"

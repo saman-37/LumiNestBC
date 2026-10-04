@@ -24,6 +24,8 @@ FRONTEND_ORIGINS = [
 ]
 BACKEND_PUBLIC_URL = os.getenv("BACKEND_PUBLIC_URL", "http://localhost:8000")
 DB_POOL_MAX_SIZE = int(os.getenv("DB_POOL_MAX_SIZE", "20"))
+# Apply sql/schema.sql (idempotent) when the server starts, so a fresh database needs no manual step.
+AUTO_MIGRATE = _bool("AUTO_MIGRATE", True)
 
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
@@ -36,7 +38,8 @@ ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_flash_v2_5")  # low lat
 # Base URL written onto NFC tags and staff-portal links (generate_tag_links.py, tag rotation).
 TAG_BASE_URL = os.getenv("TAG_BASE_URL", "https://luminestbc.tech").rstrip("/")
 
-# Admin / test hub (/admin, /api/admin/*, /api/dev/*). Off in production (render.yaml).
+# Admin / test hub (/admin, /api/admin/*, /api/dev/*). Needs ADMIN_KEY as well; without it every
+# admin endpoint answers 403, so production can keep this on for the demo behind a long key.
 DEV_TOOLS_ENABLED = _bool("DEV_TOOLS_ENABLED", True)
 ADMIN_KEY = os.getenv("ADMIN_KEY", "")
 

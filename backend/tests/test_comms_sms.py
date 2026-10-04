@@ -48,3 +48,10 @@ def test_unreadable_text_changes_nothing(client, db, monkeypatch):
     add_shelter(db, staff_phone="604-555-0101", open_beds=2)
     reply = text(client, monkeypatch, {"open_beds": None, "change": None, "is_full": None})
     assert open_beds(db) == 2 and "couldn't read" in reply
+
+
+def test_public_phone_never_matches_staff_sms(client, db, monkeypatch):
+    """public_phone is display only: a text from the front-desk number changes nothing."""
+    add_shelter(db, public_phone="604-555-0101", open_beds=2)
+    reply = text(client, monkeypatch, {"open_beds": 5})
+    assert open_beds(db) == 2 and "isn't set up" in reply

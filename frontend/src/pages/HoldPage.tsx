@@ -10,7 +10,7 @@ import { directionsUrl } from '../components/ShelterDetailView'
 import { Skeleton } from '../components/Status'
 import { useToast } from '../components/Toast'
 import { api, ApiError } from '../lib/api'
-import { formatClock, formatCountdown, useNow } from '../lib/format'
+import { formatClock, formatCountdown, formatPhone, telHref, useNow } from '../lib/format'
 import { useShelterUpdates } from '../lib/socket'
 import type { HoldWithShelter } from '../lib/types'
 
@@ -84,13 +84,13 @@ export default function HoldPage() {
   const msLeft = Date.parse(hold.expires_at) - now
   const status = hold.status === 'active' && msLeft <= 0 ? 'expired' : hold.status
   const directions = directionsUrl(shelter)
-  const phone = shelter.is_dv ? shelter.dv_phone : shelter.staff_phone
+  const phone = shelter.is_dv ? shelter.dv_phone : shelter.public_phone
   const arrived = status === 'arrived'
 
   const steps: { label: string; detail?: string; state: StepState }[] = [
     { label: 'Hold placed', detail: formatClock(hold.created_at), state: 'done' },
     { label: 'Travelling to shelter', state: arrived ? 'done' : 'current' },
-    { label: 'Tap the Arrival tag at the door', detail: arrived ? 'Arrival confirmed' : undefined, state: arrived ? 'done' : 'upcoming' },
+    { label: 'Shelter confirms arrival', detail: arrived ? 'Confirmed by shelter staff' : 'Staff confirm it when you get there', state: arrived ? 'done' : 'upcoming' },
   ]
 
   return (
@@ -117,7 +117,7 @@ export default function HoldPage() {
             ) : (
               <motion.div key="time" exit={{ opacity: 0 }}>
                 <span role="timer" className="tabular block font-display text-[40px] font-bold tracking-[-0.02em] leading-none">
-                  {formatCountdown(status === 'active' ? msLeft : 0)}
+                  {formatCountdown(status === 'active' ? Math.min(msLeft, total) : 0)}
                 </span>
                 <span className="mt-1.5 block text-[13px] text-text-muted">
                   {status === 'active' ? 'left on hold' : status === 'expired' ? 'hold expired' : 'hold released'}
@@ -138,7 +138,7 @@ export default function HoldPage() {
         {arrived && (
           <>
             <p className="mt-4 font-display text-[20px] font-bold">Arrival confirmed</p>
-            <p className="mt-1 text-[15px] text-text-3">The shelter tapped the Arrival tag. Welcome in.</p>
+            <p className="mt-1 text-[15px] text-text-3">Shelter staff confirmed the arrival. Welcome in.</p>
           </>
         )}
         {(status === 'expired' || status === 'cancelled') && (
@@ -163,8 +163,8 @@ export default function HoldPage() {
         <p className="text-[13px] font-normal uppercase tracking-wide text-text-muted">Address</p>
         <p className="mt-1 break-words text-[15px]">{shelter.address ?? 'Confidential location: call for directions'}</p>
         {phone && (
-          <a href={`tel:${phone}`} className="mt-2 inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-blue-light">
-            <Phone aria-hidden size={18} /> Call {phone}
+          <a href={telHref(phone)} className="mt-2 inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-blue-light">
+            <Phone aria-hidden size={18} /> Call {formatPhone(phone)}
           </a>
         )}
       </section>

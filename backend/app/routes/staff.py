@@ -63,14 +63,19 @@ def serialize_event(row: dict) -> dict:
         "reverted": row["reverted_at"] is not None,
         "reverts_event_id": row["reverts_event_id"],
         "revertable": revertable,
+        # Whose hold this was (hold, arrival, expiry, release); staff-key only, like the holds list.
+        "hold": ({"id": str(row["hold_id"]), "worker_name": row["worker_name"], "worker_org": row["worker_org"]}
+                 if row.get("hold_id") else None),
     }
 
 
 def load_events(conn, shelter_id: str, limit: int) -> list[dict]:
     rows = conn.execute(
-        "SELECT id, time, delta, open_beds_after, source, reverted_at, reverts_event_id,"
-        " time > now() - %s::int * interval '1 minute' AS recent"
-        " FROM availability_events WHERE shelter_id = %s ORDER BY time DESC, id DESC LIMIT %s",
+        "SELECT e.id, e.time, e.delta, e.open_beds_after, e.source, e.reverted_at, e.reverts_event_id,"
+        " e.hold_id, h.worker_name, h.worker_org,"
+        " e.time > now() - %s::int * interval '1 minute' AS recent"
+        " FROM availability_events e LEFT JOIN holds h ON h.id = e.hold_id"
+        " WHERE e.shelter_id = %s ORDER BY e.time DESC, e.id DESC LIMIT %s",
         (config.STAFF_REVERT_WINDOW_MINUTES, shelter_id, limit),
     ).fetchall()
     return [serialize_event(r) for r in rows]
@@ -305,6 +310,6 @@ def release_hold(shelter_id, hold_id):
             return {"error": "hold_not_active", "status": hold["status"]}, 409
         hold = conn.execute("UPDATE holds SET status = 'cancelled' WHERE id = %s RETURNING *", (hold_id,)).fetchone()
         updated, applied, event_id = change_beds_logged(
-            conn, shelter_id, source="staff", staff_update=True, delta=1)
+            conn, shelter_id, source="staff", staff_update=True, delta=1, hold_id=hold_id)
     emit_shelter_update(updated)
     return _applied(updated, applied, event_id, status="released", hold=serialize_hold(hold))

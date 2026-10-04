@@ -4,6 +4,8 @@
     python scripts/generate_tag_links.py --base-url http://localhost:5173 # local testing
     python scripts/generate_tag_links.py --rotate                         # new secrets for all tags
     python scripts/generate_tag_links.py --rotate-staff-keys              # new staff links for all
+    python scripts/generate_tag_links.py --base-url https://luminestbc.tech --shelter shelter-01
+                                                                          # just the demo shelter
 
 Writes data/tag_links.csv with one row per shelter: the staff portal link plus the four tag
 links. It contains secrets and is git-ignored. Don't commit it.
@@ -38,18 +40,31 @@ def new_secret() -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--base-url", default=os.getenv("TAG_BASE_URL", "https://luminestbc.tech"))
-    parser.add_argument("--out", default=str(ROOT / "data" / "tag_links.csv"))
+    parser.add_argument("--out", help="default: data/tag_links.csv (with --shelter: data/tag_links_<ids>.csv,"
+                                      " so the full sheet isn't overwritten). Git-ignored either way")
     parser.add_argument("--rotate", action="store_true", help="replace every existing tag secret")
     parser.add_argument("--rotate-staff-keys", action="store_true", help="replace every staff-portal key")
+    parser.add_argument("--shelter", action="append", metavar="ID",
+                        help="only this shelter (repeat for several), e.g. --shelter shelter-01")
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
+    if args.out is None:
+        name = "tag_links.csv" if not args.shelter else f"tag_links_{'_'.join(args.shelter)}.csv"
+        args.out = str(ROOT / "data" / name)
+    if not base.startswith(("http://", "https://")):
+        parser.error(f"--base-url must start with http:// or https:// (got {base!r})")
 
     rows = []
     with connect() as conn:
         shelters = conn.execute(
             "SELECT s.id, s.name, k.shelter_id IS NOT NULL AS has_key"
-            " FROM shelters s LEFT JOIN staff_keys k ON k.shelter_id = s.id ORDER BY s.id"
+            " FROM shelters s LEFT JOIN staff_keys k ON k.shelter_id = s.id"
+            " WHERE %(ids)s::text[] IS NULL OR s.id = ANY(%(ids)s::text[]) ORDER BY s.id",
+            {"ids": args.shelter},
         ).fetchall()
+        if args.shelter and len(shelters) != len(set(args.shelter)):
+            found = {s["id"] for s in shelters}
+            raise SystemExit(f"unknown shelter id(s): {', '.join(sorted(set(args.shelter) - found))}")
         for shelter in shelters:
             row = {"shelter_id": shelter["id"], "shelter_name": shelter["name"]}
             if shelter["has_key"] and not args.rotate_staff_keys:
@@ -76,6 +91,9 @@ def main() -> None:
 
     for row in rows:
         print(f"{row['shelter_id']:<14} staff portal: {row['staff_portal_url']}")
+        if args.shelter:  # a handful of shelters: print the tag links too
+            for action in TAG_ACTIONS:
+                print(f"{'':<14} {action:<7} {row[f'{action}_url']}")
     new_keys = sum(not r["staff_portal_url"].startswith("(") for r in rows)
     print(f"\n{len(rows)} shelter(s), {new_keys} new staff link(s), {len(rows) * 4} tag link(s) -> {args.out}")
 

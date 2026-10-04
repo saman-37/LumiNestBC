@@ -44,12 +44,12 @@ def create_hold():
             return {"error": "not_accepting"}, 409
         if shelter["open_beds"] < 1:
             return {"error": "just_taken"}, 409
-        updated, _ = change_beds(conn, shelter_id, delta=-1, source="hold")
         hold = conn.execute(
             "INSERT INTO holds (shelter_id, worker_name, worker_org, expires_at)"
             " VALUES (%s, %s, %s, now() + %s::int * interval '1 minute') RETURNING *",
             (shelter_id, worker_name, worker_org, config.HOLD_MINUTES),
         ).fetchone()
+        updated, _ = change_beds(conn, shelter_id, delta=-1, source="hold", hold_id=hold["id"])
 
     emit_shelter_update(updated)
     return {"hold": serialize_hold(hold), "shelter": public_shelter(updated)}, 201
@@ -98,7 +98,7 @@ def cancel(hold_id):
         hold = conn.execute(
             "UPDATE holds SET status = 'cancelled' WHERE id = %s RETURNING *", (hold_id,)
         ).fetchone()
-        updated, _ = change_beds(conn, hold["shelter_id"], delta=1, source="hold")
+        updated, _ = change_beds(conn, hold["shelter_id"], delta=1, source="hold", hold_id=hold["id"])
 
     emit_shelter_update(updated)
     return {"status": "cancelled", "hold": serialize_hold(hold), "shelter": public_shelter(updated)}

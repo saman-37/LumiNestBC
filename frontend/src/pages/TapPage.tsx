@@ -134,7 +134,7 @@ export default function TapPage() {
     tone = 'red'
     icon = state.invalid ? <X aria-hidden size={56} className="text-red-text" /> : <CircleAlert aria-hidden size={52} className="text-red-text" />
     title = state.invalid ? 'Tag not recognised' : "Couldn't reach LuminestBC"
-    sentence = state.invalid ? "This tag isn't recognised. Ask your coordinator." : 'Check your connection, then try again.'
+    sentence = state.invalid ? 'It may have been replaced. Ask your coordinator for the new link.' : 'Check your connection, then try again.'
     if (!state.invalid)
       extra = (
         <Button onClick={send} className="mt-8">

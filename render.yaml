@@ -1,35 +1,49 @@
 # Render blueprint for the backend API. The frontend is deployed on Vercel.
+# Every value marked `sync: false` is set by hand in the Render dashboard (see docs/DEPLOY.md).
 services:
   - type: web
     name: luminestbc-api
     runtime: python
     rootDir: backend
-    plan: free  # free instances sleep when idle; upgrade for the demo so hold expiry keeps running
+    # Free instances sleep after 15 min idle (first request then takes ~50 s, and the hold-expiry
+    # job stops). Upgrade to Starter before judging.
+    plan: free
     buildCommand: pip install -r requirements.txt
-    # Exactly one worker: Socket.IO and the background jobs live in one process.
+    # Exactly one worker: Socket.IO and the background jobs live in one process. On startup it
+    # checks the database (clear, password-free log line if unreachable) and applies the schema.
     startCommand: gunicorn -w 1 --threads 100 -b 0.0.0.0:$PORT wsgi:app
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      # Tiger Data connection string ending in ?sslmode=require (with the final "e").
+      # Check it from a laptop first: DATABASE_URL='...' python scripts/check_db.py
       - key: DATABASE_URL
         sync: false
-      # Comma-separated, no trailing slashes: the Vercel URL, plus the custom domain once it's live,
-      # e.g. https://luminestbc.vercel.app,https://luminestbc.tech,https://www.luminestbc.tech
+      - key: AUTO_MIGRATE
+        value: "true"
+      # Comma-separated, no trailing slashes. Used for REST CORS and Socket.IO.
       - key: FRONTEND_ORIGIN
-        sync: false
+        value: https://lumi-nest-bc.vercel.app,https://luminestbc.tech,https://www.luminestbc.tech
+      # This service's own URL: Twilio webhook signatures and voice audio links use it.
       - key: BACKEND_PUBLIC_URL
-        sync: false
+        value: https://luminestbc-api.onrender.com
+      # Where tag and staff links point (tag rotation in the staff portal).
+      - key: TAG_BASE_URL
+        value: https://lumi-nest-bc.vercel.app
       - key: SMS_NUDGE_ENABLED
         value: "false"
+      # The admin hub is on for the demo, but every admin endpoint needs ADMIN_KEY (403 without it)
+      # and is rate limited (60 requests a minute).
       - key: DEV_TOOLS_ENABLED
-        value: "true"  # no /admin or simulators in production
-      - key: TAG_BASE_URL
-        value: hhttps://lumi-nest-bc.vercel.app
+        value: "true"
+      - key: ADMIN_KEY
+        sync: false
       - key: ELEVENLABS_MODEL
         value: eleven_flash_v2_5
       - key: TWILIO_ACCOUNT_SID
         sync: false
+      # Also turns on webhook signature checks: /twilio/* without a valid signature gets 403.
       - key: TWILIO_AUTH_TOKEN
         sync: false
       - key: TWILIO_PHONE_NUMBER

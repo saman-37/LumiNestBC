@@ -19,7 +19,7 @@ import { api, ApiError } from '../lib/api'
 import { DEFAULT_AREA, findArea } from '../lib/areas'
 import { useMediaQuery, useViewportHeight, vibrate } from '../lib/device'
 import { hasBeds, isOpen, matchesFilters } from '../lib/filters'
-import { getLocation, haversineKm, type LatLng } from '../lib/geo'
+import { geocodeAddress, getLocation, haversineKm, type LatLng } from '../lib/geo'
 import { useShelterStore } from '../lib/shelterStore'
 import type { FilterKey, Shelter } from '../lib/types'
 import { loadWorker, saveWorker, type Worker } from '../lib/worker'
@@ -130,14 +130,19 @@ export default function MapPage() {
   }, [sheetPx, desktop])
 
   // ---- search / locate ----
-  function search(text: string) {
-    const area = findArea(text)
-    if (!area) {
-      toast(`Couldn't find "${text.trim()}". Try an area like Metrotown or Whalley.`, 'error')
+  // Known areas answer instantly; anything else (a street address, intersection or place) is geocoded.
+  async function search(text: string) {
+    // A house number means a real address ("10666 City Parkway, Surrey"): look it up first rather
+    // than snapping to the area its city name matches.
+    const looksLikeAddress = /\d/.test(text)
+    const area = looksLikeAddress ? null : findArea(text)
+    const place = area ?? (await geocodeAddress(text)) ?? (looksLikeAddress ? findArea(text) : null)
+    if (!place) {
+      toast(`Couldn't find "${text.trim()}". Try a street address, intersection or area like Metrotown.`, 'error')
       return
     }
-    setOrigin(area)
-    setOriginLabel(area.name)
+    setOrigin({ lat: place.lat, lng: place.lng })
+    setOriginLabel('label' in place ? place.label : place.name)
     setOriginKey((k) => k + 1)
   }
 
@@ -145,11 +150,16 @@ export default function MapPage() {
     setLocating(true)
     const here = await getLocation()
     setLocating(false)
-    if (!here) {
-      toast('Location unavailable. Showing Main St & Hastings.', 'error')
+    if (!here.ok) {
+      const why = {
+        insecure: 'Location only works on a secure (https) page.',
+        denied: 'Location permission is off for this site.',
+        unavailable: "Couldn't get your location.",
+      }[here.reason]
+      toast(`${why} Type an address or area instead.`, 'error')
       return
     }
-    setOrigin(here)
+    setOrigin(here.at)
     setOriginLabel('My location')
     setOriginKey((k) => k + 1)
   }
@@ -192,11 +202,16 @@ export default function MapPage() {
     }
   }
 
-  function requestHold(shelter: Shelter) {
+  // Stable identity (reads the latest state through a ref) so memoised list cards skip re-renders.
+  const requestHoldRef = useRef((shelter: Shelter) => {
+    void shelter
+  })
+  requestHoldRef.current = (shelter: Shelter) => {
     const worker = loadWorker()
     if (worker) hold(shelter, worker)
     else setPendingHold(shelter)
   }
+  const requestHold = useCallback((shelter: Shelter) => requestHoldRef.current(shelter), [])
 
   // ---- pieces ----
   const heights = snapHeights(vh, topPx)
@@ -211,6 +226,7 @@ export default function MapPage() {
         locating={locating}
         onSearch={search}
         onLocate={locate}
+        onFocus={() => !desktop && setSnap('peek')} // keep the field and suggestions above the keyboard
         onVoiceMatch={() => setVoiceOpen(true)}
       />
       <FilterBar active={filters} onToggle={toggleFilter} onOpenSheet={() => setFilterSheet(true)} />
@@ -282,11 +298,11 @@ export default function MapPage() {
   )
 
   const ctrlBtn =
-    'grid h-10 w-10 place-items-center rounded-[10px] border border-border bg-surface text-text shadow-[var(--shadow-float)] hover:bg-surface-2'
+    'grid h-11 w-11 place-items-center rounded-[10px] border border-border bg-surface text-text shadow-[var(--shadow-float)] hover:bg-surface-2'
   const mapControls = (
     <div
-      className="absolute right-3 z-[950] flex flex-col gap-2 transition-[top] duration-300"
-      style={{ top: desktop ? DESKTOP_MARGIN : topPx + 12, right: desktop ? DESKTOP_MARGIN : 12 }}
+      className="absolute top-0 right-3 z-[950] flex flex-col gap-2 transition-transform duration-300 will-change-transform"
+      style={{ transform: `translateY(${desktop ? DESKTOP_MARGIN : topPx + 12}px)`, right: desktop ? DESKTOP_MARGIN : 12 }}
     >
       <button
         type="button"
@@ -352,8 +368,8 @@ export default function MapPage() {
         </>
       ) : (
         <div
-          className="pointer-events-none absolute inset-x-3 z-[900] flex items-center justify-between gap-1 transition-[bottom] duration-300"
-          style={{ bottom: sheetPx + 8 }}
+          className="pointer-events-none absolute inset-x-3 bottom-0 z-[900] flex items-center justify-between gap-1 transition-transform duration-300"
+          style={{ transform: `translateY(-${sheetPx + 8}px)` }}
         >
           <div className="flex items-center gap-2">
             <DemoBadge />

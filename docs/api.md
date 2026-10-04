@@ -27,6 +27,7 @@ Every shelter that leaves the server (REST responses and socket events) has exac
   "is_dv": false,
   "dv_phone": null,
   "staff_phone": "604-555-0101",
+  "public_phone": "604-264-1680",
   "accepting": true,
   "last_update_source": "tap",
   "last_updated_at": "2026-10-03T23:04:35.902808+00:00",
@@ -35,10 +36,11 @@ Every shelter that leaves the server (REST responses and socket events) has exac
 }
 ```
 
-- `freshness` is `green` under 60 min, `amber` from 60 to 180 min, and `red` over 180 min since staff last confirmed the count.
+- `freshness` is `green` under 60 min, `amber` from 60 to 180 min, and `red` over 180 min since staff last confirmed the count. The UI shows it only as the colour of the "Updated 4 h ago" line; an old count is displayed (and can be held) like any other.
+- `public_phone` is the shelter's public front-desk number, used for the Call button (display only; staff SMS updates match on `staff_phone`, never this). `null` when unknown.
 - `accepting` is `false` when staff turned off "accepting new people" tonight: no holds (`409 not_accepting`), not offered by the voice line, shown like a full shelter.
 - `last_update_source` is what last changed the count: `tap`, `sms`, `staff`, `hold`, `arrival`, `expiry` or `undo` (or `null` if never changed).
-- **DV shelters** (`is_dv: true`) always have `address`, `lat`, `lng` and `staff_phone` set to `null`, and carry `dv_phone`. The UI shows only "DV bed available: call [dv_phone]" and never draws a pin.
+- **DV shelters** (`is_dv: true`) always have `address`, `lat`, `lng`, `staff_phone` and `public_phone` set to `null`, and carry `dv_phone`. The UI shows only "DV bed available: call [dv_phone]" and never draws a pin.
 
 ## The Hold object
 
@@ -79,8 +81,11 @@ Recent events, newest first (`limit` is 1 to 100): `{ "events": [ <Event>, ... ]
 
 ```json
 { "id": 4182, "time": "2026-10-03T23:22:20+00:00", "delta": -1, "open_beds_after": 0,
-  "source": "tap", "reverted": false, "reverts_event_id": null, "revertable": true }
+  "source": "hold", "reverted": false, "reverts_event_id": null, "revertable": false,
+  "hold": { "id": "6ae26ff4-…", "worker_name": "Ana", "worker_org": "Downtown Outreach" } }
 ```
+`hold` names whose hold a hold, arrival, expiry or release event was (`null` for other events).
+Events are only returned with the staff key, like the holds list.
 `source` is one of `tap`, `sms`, `staff`, `hold`, `arrival`, `expiry` or `undo`. `revertable`
 is true for a `tap`/`sms`/`staff` change from the last 60 minutes with a non-zero delta that
 hasn't been reverted and isn't itself a revert. A revert has `reverts_event_id` set.
@@ -181,7 +186,8 @@ staff phone) and refuses a staff phone.
 ## Admin / test hub (dev tools only)
 
 Only when `DEV_TOOLS_ENABLED=true` (otherwise `404 not_found`). Needs **`X-Admin-Key`** equal to
-`ADMIN_KEY` (`403 admin_key_not_set` / `403 invalid_admin_key`). Rate limited like the staff portal.
+`ADMIN_KEY` (`403 admin_key_not_set` / `403 invalid_admin_key`). Rate limited to 60 requests a
+minute in total (`429 rate_limited`). Production keeps it on for the demo, behind a long `ADMIN_KEY`.
 
 | Endpoint | Body | Response |
 |---|---|---|

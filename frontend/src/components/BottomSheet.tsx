@@ -1,4 +1,4 @@
-import { animate, motion, useDragControls, useMotionValue, useReducedMotion, useTransform, type PanInfo } from 'motion/react'
+import { animate, motion, useDragControls, useMotionValue, useReducedMotion, type PanInfo } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useViewportHeight } from '../lib/device'
 
@@ -37,7 +37,10 @@ export function BottomSheet({ snap, onSnap, onDismiss, onHeightChange, header, c
   const reduce = useReducedMotion()
   const headerRef = useRef<HTMLDivElement>(null)
   const [headerH, setHeaderH] = useState(64)
-  const scrollHeight = useTransform(y, (v) => Math.max(0, full - v - headerH))
+  // The scroll area is always as tall as the "full" sheet; only the sheet's transform moves while
+  // dragging (no per-frame height/layout). Bottom padding equal to the hidden part, set once per
+  // snap, keeps the last card reachable at every height.
+  const [hiddenPx, setHiddenPx] = useState(full - heights[snap])
 
   useLayoutEffect(() => {
     const el = headerRef.current
@@ -49,6 +52,7 @@ export function BottomSheet({ snap, onSnap, onDismiss, onHeightChange, header, c
 
   const settle = (to: Snap) => {
     const controlsAnim = animate(y, full - heights[to], reduce ? { duration: 0 } : { type: 'spring', stiffness: 340, damping: 36 })
+    setHiddenPx(full - heights[to])
     onHeightChange?.(heights[to])
     return controlsAnim
   }
@@ -84,7 +88,7 @@ export function BottomSheet({ snap, onSnap, onDismiss, onHeightChange, header, c
       dragElastic={0.06}
       dragMomentum={false}
       onDragEnd={onDragEnd}
-      className="fixed inset-x-0 bottom-0 z-[1000] flex flex-col rounded-t-[24px] bg-surface shadow-[0_-8px_32px_rgba(16,40,35,0.14)]"
+      className="fixed inset-x-0 bottom-0 z-[1000] flex flex-col rounded-t-[24px] bg-surface shadow-[0_-8px_32px_rgba(16,40,35,0.14)] will-change-transform"
     >
       <div ref={headerRef} onPointerDown={(e) => controls.start(e)} className="shrink-0 cursor-grab touch-none px-4 active:cursor-grabbing">
         <button
@@ -97,9 +101,10 @@ export function BottomSheet({ snap, onSnap, onDismiss, onHeightChange, header, c
         </button>
         {header}
       </div>
-      <motion.div style={{ height: scrollHeight }} className="overflow-y-auto overscroll-contain px-4 pb-[max(env(safe-area-inset-bottom),16px)]">
+      <div style={{ height: Math.max(0, full - headerH) }} className="overflow-y-auto overscroll-contain px-4">
         {children}
-      </motion.div>
+        <div aria-hidden style={{ height: hiddenPx }} className="pb-[max(env(safe-area-inset-bottom),16px)]" />
+      </div>
     </motion.section>
   )
 }

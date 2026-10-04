@@ -11,17 +11,16 @@ export function PinTooltip({ shelter, km, compact = false }: { shelter: Shelter;
     !shelter.accepting
       ? 'Not accepting tonight'
       : state === 'full'
-      ? 'Full tonight'
-      : state === 'stale'
-        ? `${shelter.open_beds} ${bedsWord(shelter.open_beds)}, unconfirmed`
+        ? 'Full tonight'
         : `${shelter.open_beds} ${bedsWord(shelter.open_beds)} open`
-  const dot = state === 'full' ? 'bg-pin-grey' : state === 'stale' ? 'bg-red' : 'bg-green'
+  const dot = state === 'full' ? 'bg-pin-grey' : 'bg-green'
 
   return (
-    <div className={`flex max-w-[calc(100vw-40px)] gap-3 p-3 text-left ${compact ? 'w-[260px] items-center' : 'w-[300px]'}`}>
-      <ShelterPhoto shelter={shelter} size="sm" />
+    <div className={`flex max-w-[calc(100vw-40px)] gap-3 text-left ${compact ? 'w-[240px] items-center px-3 py-2.5' : 'w-[300px] p-3'}`}>
+      {/* touch: the sheet below already shows the photo, so the card stays small and clear of the top bar */}
+      {!compact && <ShelterPhoto shelter={shelter} size="sm" />}
       <span className="min-w-0 flex-1">
-        <span className="block break-words text-[15px] font-bold leading-snug text-tooltip-title">{shelter.name}</span>
+        <span className={`block break-words text-[15px] font-bold leading-snug text-tooltip-title ${compact ? 'line-clamp-2' : ''}`}>{shelter.name}</span>
         {!compact && shelter.address && <span className="mt-0.5 block break-words text-[13px] leading-snug text-tooltip-body">{shelter.address}</span>}
         <span className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-tooltip-body">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 font-semibold text-tooltip-title">

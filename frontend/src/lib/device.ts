@@ -30,3 +30,14 @@ export function useViewportHeight(): number {
   }, [])
   return h
 }
+
+/**
+ * Adds "low-perf" to <html> on phones that report few cores or little memory. CSS then swaps
+ * frosted-glass blur (expensive on phones) for a solid surface.
+ */
+export function markLowPerformance(): void {
+  const nav = navigator as Navigator & { deviceMemory?: number }
+  const lowCores = (nav.hardwareConcurrency ?? 8) <= 4
+  const lowMemory = (nav.deviceMemory ?? 8) <= 4
+  if (lowCores || lowMemory) document.documentElement.classList.add('low-perf')
+}

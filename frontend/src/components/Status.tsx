@@ -4,32 +4,24 @@ import type { Freshness, Shelter } from '../lib/types'
 
 // Colour is always paired with words, never used alone.
 
-const FRESH: Record<Freshness, { dot: string; text: string; pill: string; label: string }> = {
-  green: { dot: 'bg-green', text: 'text-green-text', pill: 'border-green-tint-border bg-green-tint text-green-text', label: 'Fresh' },
-  amber: { dot: 'bg-amber', text: 'text-amber-text', pill: 'border-banner-border bg-amber-tint text-amber-text', label: 'Getting stale' },
-  red: { dot: 'bg-red', text: 'text-red-text', pill: 'border-red-tint-border bg-red-tint text-red-text', label: 'May be outdated' },
+const FRESH: Record<Freshness, { dot: string; text: string }> = {
+  green: { dot: 'bg-green', text: 'text-green-text' },
+  amber: { dot: 'bg-amber', text: 'text-amber-text' },
+  red: { dot: 'bg-red', text: 'text-red-text' },
 }
 
-/** "Updated 4 min ago · Tap Board" with a coloured dot. */
+/**
+ * "Updated 4 h ago · Tap Board" with a dot, green / amber / red by freshness. The only freshness
+ * indicator in any view: no separate pill, no "may be outdated".
+ */
 export function FreshnessLine({ shelter, source }: { shelter: Shelter; source?: string | null }) {
   const f = FRESH[shelter.freshness]
   const parts = [`Updated ${formatAgo(shelter.minutes_since_update)}`]
   if (source) parts.push(source)
-  if (shelter.freshness === 'red') parts.push('may be outdated')
   return (
     <span className={`inline-flex items-start gap-1.5 text-[13px] font-medium ${f.text}`}>
       <span aria-hidden className={`mt-[5px] h-2 w-2 shrink-0 rounded-full ${f.dot}`} />
       <span>{parts.join(' · ')}</span>
-    </span>
-  )
-}
-
-export function FreshnessPill({ freshness }: { freshness: Freshness }) {
-  const f = FRESH[freshness]
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] font-semibold ${f.pill}`}>
-      <span aria-hidden className={`h-2 w-2 rounded-full ${f.dot}`} />
-      {f.label}
     </span>
   )
 }

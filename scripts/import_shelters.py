@@ -4,7 +4,8 @@
     python scripts/import_shelters.py data/real.csv --schema  # apply schema.sql first (new DB)
     python scripts/import_shelters.py data/real.csv --geocode # fill blank lat/lng from address
 
-Columns: see data/shelters_template.csv. DV rows are always stored without address,
+Columns: see data/shelters_template.csv (public_phone is optional: the front-desk number on
+the Call button, display only). DV rows are always stored without address,
 coordinates or staff phone, even if the CSV has them.
 
 --geocode looks up blank lat/lng on OpenStreetMap Nominatim (1 request per second) and
@@ -23,6 +24,8 @@ import urllib.parse
 import urllib.request
 
 from _common import ROOT, connect
+
+from app.comms.http import ssl_context
 
 BOOL_COLS = ("is_full", "women_only", "youth", "families", "pets_ok", "accessible", "couples", "is_dv")
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -48,19 +51,21 @@ def to_row(raw: dict) -> dict:
     row["capacity"] = int(row["capacity"] or 0)
     row["open_beds"] = 0 if row["is_full"] else int(row["open_beds"] or 0)
     row["is_full"] = row["open_beds"] == 0
+    row.setdefault("public_phone", None)  # older CSVs have no public_phone column
     if row["is_dv"]:
         if row["address"] or row["lat"] or row["lng"]:
             print(f"  ! {row['id']}: DV shelter had a location in the CSV; dropping it")
         if row["staff_phone"]:
             print(f"  ! {row['id']}: DV shelter had a staff phone in the CSV; dropping it")
-        row.update(address=None, lat=None, lng=None, staff_phone=None)
+        row.update(address=None, lat=None, lng=None, staff_phone=None, public_phone=None)
     return row
 
 
 def geocode(address: str) -> tuple[float, float] | None:
     query = urllib.parse.urlencode({"q": address, "format": "json", "limit": 1, "countrycodes": "ca"})
     request = urllib.request.Request(f"{NOMINATIM_URL}?{query}", headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=15) as response:
+    # certifi's CA bundle: python.org macOS builds ship without system certificates.
+    with urllib.request.urlopen(request, timeout=15, context=ssl_context()) as response:
         results = json.load(response)
     return (float(results[0]["lat"]), float(results[0]["lon"])) if results else None
 
@@ -132,10 +137,10 @@ def main() -> None:
                 """
                 INSERT INTO shelters (id, name, address, lat, lng, capacity, open_beds, is_full,
                     women_only, youth, families, pets_ok, accessible, couples, is_dv, dv_phone,
-                    staff_phone, last_updated_at)
+                    staff_phone, public_phone, last_updated_at)
                 VALUES (%(id)s, %(name)s, %(address)s, %(lat)s, %(lng)s, %(capacity)s, %(open_beds)s,
                     %(is_full)s, %(women_only)s, %(youth)s, %(families)s, %(pets_ok)s, %(accessible)s,
-                    %(couples)s, %(is_dv)s, %(dv_phone)s, %(staff_phone)s,
+                    %(couples)s, %(is_dv)s, %(dv_phone)s, %(staff_phone)s, %(public_phone)s,
                     COALESCE(%(last_updated_at)s::timestamptz, now()))
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name, address = EXCLUDED.address, lat = EXCLUDED.lat,
@@ -144,7 +149,7 @@ def main() -> None:
                     families = EXCLUDED.families, pets_ok = EXCLUDED.pets_ok,
                     accessible = EXCLUDED.accessible, couples = EXCLUDED.couples, is_dv = EXCLUDED.is_dv,
                     dv_phone = EXCLUDED.dv_phone, staff_phone = EXCLUDED.staff_phone,
-                    last_updated_at = EXCLUDED.last_updated_at
+                    public_phone = EXCLUDED.public_phone, last_updated_at = EXCLUDED.last_updated_at
                 """,
                 row,
             )

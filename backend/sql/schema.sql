@@ -110,3 +110,11 @@ CREATE TABLE IF NOT EXISTS staff_keys (
 -- Free text from an imported listing (e.g. BC211's Note / Intake Info / Accessibility), so the
 -- detail view can show intake hours later. Never about a person; not in the public API yet.
 ALTER TABLE shelters ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- Which hold a hold / arrival / expiry / release event belongs to, so the staff portal can say
+-- "Manjari (SFU) arrived". Holds store only the worker's name and org; nothing about the person.
+ALTER TABLE availability_events ADD COLUMN IF NOT EXISTS hold_id UUID;
+
+-- Public front-desk number shown on the Call button (display only; never used to match SMS,
+-- which only uses staff_phone). NULL for DV shelters, which show dv_phone instead.
+ALTER TABLE shelters ADD COLUMN IF NOT EXISTS public_phone TEXT;

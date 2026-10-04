@@ -29,7 +29,6 @@ export function ListHeader({ count, loading }: { count: number; loading: boolean
 function SectionLabel({ children }: { children: string }) {
   return (
     <motion.li
-      layout
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

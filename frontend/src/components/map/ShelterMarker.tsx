@@ -1,5 +1,5 @@
 import { divIcon, type Marker as LeafletMarker } from 'leaflet'
-import { useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import { Marker, Tooltip } from 'react-leaflet'
 import { bedsWord, shelterState, type ShelterState } from '../../lib/filters'
 import type { Shelter } from '../../lib/types'
@@ -8,13 +8,11 @@ import { PinTooltip } from './PinTooltip'
 function pinLabel(state: ShelterState, beds: number, accepting: boolean): string {
   if (!accepting) return 'Closed'
   if (state === 'full') return 'Full'
-  if (state === 'stale') return `${beds}?`
   return String(beds)
 }
 
 function pinTitle(s: Shelter, state: ShelterState): string {
   if (state === 'full') return `${s.name}: full`
-  if (state === 'stale') return `${s.name}: ${s.open_beds} ${bedsWord(s.open_beds)}, unconfirmed`
   return `${s.name}: ${s.open_beds} ${bedsWord(s.open_beds)} open`
 }
 
@@ -38,10 +36,21 @@ interface Props {
  * (which replays the pop + ripple); selection, dimming and filtering toggle classes on the
  * existing element so they can transition smoothly instead of popping.
  */
-export function ShelterMarker({ shelter, hidden, dimmed, selected, bumped, showTip, compactTip, km, onSelect, onHover }: Props) {
+export const ShelterMarker = memo(function ShelterMarker({ shelter, hidden, dimmed, selected, bumped, showTip, compactTip, km, onSelect, onHover }: Props) {
   const ref = useRef<LeafletMarker>(null)
   const state = shelterState(shelter)
   const label = pinLabel(state, shelter.open_beds, shelter.accepting)
+  const title = pinTitle(shelter, state)
+
+  // Event handlers stay the same object so react-leaflet doesn't rebind them on every render.
+  const handlers = useMemo(
+    () => ({
+      click: () => onSelect(shelter.id),
+      mouseover: () => !hidden && onHover(shelter.id),
+      mouseout: () => onHover(null),
+    }),
+    [onSelect, onHover, shelter.id, hidden],
+  )
 
   const icon = useMemo(
     () =>
@@ -65,7 +74,9 @@ export function ShelterMarker({ shelter, hidden, dimmed, selected, bumped, showT
     el.classList.toggle('is-selected', selected)
     el.tabIndex = hidden && !selected ? -1 : 0
     el.setAttribute('aria-hidden', String(hidden && !selected))
-  }, [icon, hidden, dimmed, selected])
+    // Leaflet only applies `alt` to image icons; our pins are divs with role="button", so name them here.
+    el.setAttribute('aria-label', title)
+  }, [icon, hidden, dimmed, selected, title])
 
   if (shelter.lat === null || shelter.lng === null) return null
   return (
@@ -73,13 +84,9 @@ export function ShelterMarker({ shelter, hidden, dimmed, selected, bumped, showT
       ref={ref}
       position={[shelter.lat, shelter.lng]}
       icon={icon}
-      alt={pinTitle(shelter, state)}
+      alt={title}
       zIndexOffset={selected ? 1000 : state === 'open' ? 200 : 0}
-      eventHandlers={{
-        click: () => onSelect(shelter.id),
-        mouseover: () => !hidden && onHover(shelter.id),
-        mouseout: () => onHover(null),
-      }}
+      eventHandlers={handlers}
     >
       {showTip && !hidden && (
         <Tooltip permanent direction="top" offset={[0, -24]} opacity={1} className="pin-tip">
@@ -88,4 +95,4 @@ export function ShelterMarker({ shelter, hidden, dimmed, selected, bumped, showT
       )}
     </Marker>
   )
-}
+})

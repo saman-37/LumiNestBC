@@ -5,8 +5,13 @@ import type { Shelter } from './types'
 
 let socket: Socket | null = null
 
+// Production: Socket.IO's default (connect by long-polling, then upgrade to WebSocket; stays on
+// polling if something blocks WebSockets). Dev: long-polling only, because Flask's dev server
+// (Werkzeug) can't close WebSockets cleanly behind Vite's proxy.
+const OPTIONS = import.meta.env.DEV ? { transports: ['polling'] } : {}
+
 function getSocket(): Socket {
-  socket ??= API_BASE ? io(API_BASE) : io()
+  socket ??= API_BASE ? io(API_BASE, OPTIONS) : io(OPTIONS)
   return socket
 }
 

@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { AdminShell } from '../components/admin/AdminShell'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { Button } from '../components/Button'
-import { FreshnessPill } from '../components/Status'
+import { FreshnessLine } from '../components/Status'
 import { useToast } from '../components/Toast'
 import { adminApi, ApiError } from '../lib/api'
 import { useShelterStore } from '../lib/shelterStore'
@@ -79,7 +79,7 @@ function ShelterHub({ adminKey }: { adminKey: string }) {
                     {!s.has_staff_key && ' · no staff key yet'}
                   </p>
                   <div className="mt-1.5">
-                    <FreshnessPill freshness={now.freshness} />
+                    <FreshnessLine shelter={now} />
                   </div>
                 </div>
                 <div className="shrink-0 text-right">

@@ -24,7 +24,7 @@ def expire_holds() -> int:
             " WHERE status = 'active' AND expires_at <= now() RETURNING id, shelter_id"
         ).fetchall()
         for hold in expired:
-            shelter, _ = change_beds(conn, hold["shelter_id"], delta=1, source="expiry")
+            shelter, _ = change_beds(conn, hold["shelter_id"], delta=1, source="expiry", hold_id=hold["id"])
             updated_shelters[shelter["id"]] = shelter
     for shelter in updated_shelters.values():
         emit_shelter_update(shelter)

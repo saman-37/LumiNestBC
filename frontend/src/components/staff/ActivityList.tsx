@@ -17,6 +17,7 @@ const ICONS: Record<EventSource, { Icon: LucideIcon; label: string }> = {
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0')
 
 function describe(e: AvailabilityEvent): string {
+  const who = e.hold ? `${e.hold.worker_name} (${e.hold.worker_org})` : null
   switch (e.source) {
     case 'tap':
       if (e.delta > 0) return 'Bed freed'
@@ -28,13 +29,15 @@ function describe(e: AvailabilityEvent): string {
       return e.delta ? `Text update ${signed(e.delta)}` : 'Text update, no change'
     case 'staff':
       if (e.reverts_event_id) return 'Reverted a change'
+      if (who) return `Released ${who}'s hold, bed back`
       return e.delta ? `Changed ${signed(e.delta)}` : 'Confirmed / settings saved'
     case 'hold':
-      return e.delta < 0 ? 'Bed held by an outreach worker' : 'Hold released'
+      if (e.delta < 0) return who ? `Bed held for ${who}` : 'Bed held by an outreach worker'
+      return who ? `${who} cancelled their hold` : 'Hold released'
     case 'arrival':
-      return 'Arrival confirmed'
+      return who ? `${who} arrived` : 'Arrival confirmed'
     case 'expiry':
-      return 'Hold expired, bed back'
+      return who ? `${who}'s hold expired, bed back` : 'Hold expired, bed back'
   }
 }
 

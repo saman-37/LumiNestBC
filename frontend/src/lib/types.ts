@@ -24,6 +24,8 @@ export interface Shelter {
   is_dv: boolean
   dv_phone: string | null
   staff_phone: string | null
+  /** front-desk number for the Call button (display only); null for DV shelters and when unknown */
+  public_phone: string | null
   /** false = staff turned off "accepting new people" tonight (no holds) */
   accepting: boolean
   /** what last changed the count */
@@ -55,6 +57,8 @@ export interface AvailabilityEvent {
   reverts_event_id: number | null
   /** tap/text/staff change from the last hour that hasn't been reverted */
   revertable: boolean
+  /** whose hold a hold / arrival / expiry / release event was (staff portal only) */
+  hold: { id: string; worker_name: string; worker_org: string } | null
 }
 
 export interface TapResponse {

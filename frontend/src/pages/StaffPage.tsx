@@ -7,13 +7,13 @@ import { CountPanel } from '../components/staff/CountPanel'
 import { HoldsList } from '../components/staff/HoldsList'
 import { SettingsPanel } from '../components/staff/SettingsPanel'
 import { TagsPanel } from '../components/staff/TagsPanel'
-import { FreshnessPill, Skeleton } from '../components/Status'
+import { Skeleton } from '../components/Status'
 import { useToast } from '../components/Toast'
 import { api, ApiError, staffApi, type StaffAuth } from '../lib/api'
 import { bedsWord } from '../lib/filters'
 import { captureStaffKeyFromUrl, forgetStaffKey, getAdminKey, getStaffKey } from '../lib/keys'
 import { useShelterUpdates } from '../lib/socket'
-import type { Shelter, StaffChange, StaffDetail, TagAction } from '../lib/types'
+import type { Hold, Shelter, StaffChange, StaffDetail, TagAction } from '../lib/types'
 
 // The private staff portal. Access is the link from the coordinator:
 // /staff/<shelter>#key=<key>. The key moves into localStorage and leaves the address bar.
@@ -126,6 +126,22 @@ export default function StaffPage() {
     }
   }
 
+  /** Same as tapping the Arrival tag: confirms the hold; the bed was already taken by it. */
+  async function arrive(hold: Hold) {
+    setBusy(true)
+    try {
+      const res = await api.arriveHold(hold.id)
+      setDetail((d) => (d ? { ...d, shelter: res.shelter } : d))
+      toast(`${hold.worker_name} (${hold.worker_org}) arrived`, 'success')
+      scheduleRefresh(300)
+    } catch (e) {
+      toast(ERRORS[e instanceof ApiError ? e.code : 'network_error'] ?? "Couldn't confirm the arrival.", 'error')
+      scheduleRefresh(300)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function rotate(action: TagAction) {
     if (!auth) return null
     setBusy(true)
@@ -165,10 +181,7 @@ export default function StaffPage() {
   return (
     <PageShell>
       <p className="text-[13px] uppercase tracking-wide text-text-muted">Staff view{'adminKey' in auth ? ' · admin' : ''}</p>
-      <div className="mt-0.5 flex items-start justify-between gap-3">
-        <h1 className="min-w-0 break-words font-display text-[22px] font-bold leading-tight">{shelter.name}</h1>
-        <FreshnessPill freshness={shelter.freshness} />
-      </div>
+      <h1 className="mt-0.5 break-words font-display text-[22px] font-bold leading-tight">{shelter.name}</h1>
 
       <div className="mt-4 grid gap-4">
         <CountPanel
@@ -184,6 +197,7 @@ export default function StaffPage() {
         <HoldsList
           holds={detail.holds}
           busy={busy}
+          onArrive={arrive}
           onRelease={(h) => run(() => staffApi.releaseHold(shelterId, auth, h.id), () => `Released ${h.worker_name}'s hold`, false)}
         />
         <ActivityList

@@ -14,7 +14,7 @@ export interface Cluster {
 
 function rank(s: Shelter): number {
   const state = shelterState(s)
-  return state === 'open' || state === 'open-one' ? 2 : state === 'stale' ? 1 : 0
+  return state === 'open' || state === 'open-one' ? 1 : 0
 }
 
 /**
@@ -42,20 +42,13 @@ export function clusterShelters(map: LeafletMap, shelters: Shelter[], zoom: numb
   return clusters
 }
 
-/** What a cluster light shows: confirmed open beds, else unconfirmed beds with "?", else Full. */
+/** What a cluster light shows: the open beds of its shelters, else Full. */
 export function clusterSummary(members: Shelter[]): { state: ShelterState; label: string; open: number } {
   let open = 0
-  let stale = 0
-  let anyStale = false
   for (const s of members) {
     const state = shelterState(s)
     if (state === 'open' || state === 'open-one') open += s.open_beds
-    else if (state === 'stale') {
-      anyStale = true
-      stale += s.open_beds
-    }
   }
   if (open > 0) return { state: open >= 2 ? 'open' : 'open-one', label: String(open), open }
-  if (anyStale) return { state: 'stale', label: `${stale}?`, open }
   return { state: 'full', label: 'Full', open }
 }

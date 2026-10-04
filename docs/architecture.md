@@ -55,6 +55,8 @@ only, no names). `matcher.rank_shelters()` ranks real rows by distance plus stal
 - Freshness (`last_updated_at`) moves only on staff actions (taps, undo, arrival, SMS), never
   on holds or expiries.
 - Emits happen after commit.
+- On startup (`wsgi.py`) the database is checked (password-free error with hints if unreachable)
+  and `sql/schema.sql` is applied; it's idempotent, so a fresh database needs no manual step.
 - One gunicorn worker, so Socket.IO and jobs need no message queue.
 
 All tunable numbers are in `backend/app/config.py`.

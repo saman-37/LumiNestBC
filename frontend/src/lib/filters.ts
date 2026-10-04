@@ -16,14 +16,13 @@ export function matchesFilters(shelter: Shelter, active: Set<FilterKey>): boolea
 }
 
 /**
- * How a shelter reads at a glance. Stale (3 h+) wins: an old count is "unconfirmed"
- * whatever it says.
+ * How a shelter reads at a glance. Freshness never changes it: an old count is shown like any
+ * other, with its "Updated 4 h ago" line coloured amber or red.
  */
-export type ShelterState = 'open' | 'open-one' | 'full' | 'stale'
+export type ShelterState = 'open' | 'open-one' | 'full'
 
 export function shelterState(s: Shelter): ShelterState {
   if (!s.accepting) return 'full' // staff turned off "accepting new people" tonight
-  if (s.freshness === 'red') return 'stale'
   if (s.is_full || s.open_beds < 1) return 'full'
   return s.open_beds >= 2 ? 'open' : 'open-one'
 }
@@ -33,7 +32,7 @@ export function isOpen(s: Shelter): boolean {
   return state === 'open' || state === 'open-one'
 }
 
-/** At least one open bed reported (stale counts included; they show as "unconfirmed"). */
+/** At least one open bed reported, and accepting people. */
 export function hasBeds(s: Shelter): boolean {
   return s.open_beds > 0 && !s.is_full && s.accepting
 }

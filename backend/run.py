@@ -2,12 +2,15 @@
 import logging
 import os
 
-from app import create_app
+from app import config, create_app
+from app.db import prepare_database
 from app.jobs import start_jobs
 from app.sockets import socketio
 
 logging.basicConfig(level=logging.INFO)
-app = create_app()
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true":  # once, in the process that serves requests
+    prepare_database(config.DATABASE_URL, migrate=config.AUTO_MIGRATE)
+app = create_app(allow_lan_origins=True)  # phones on the same Wi-Fi (dev only)
 
 if __name__ == "__main__":
     # With the reloader on, only the child process (WERKZEUG_RUN_MAIN=true) serves requests.
