@@ -28,7 +28,16 @@ from ..db import transaction
 from ..sockets import emit_shelter_update
 from .gemini import extract_voice_request, parse_staff_text
 from .matcher import find_area, rank_shelters
-from .voice import audio_id_for, beds_word, describe_match, get_cached_audio, say
+from .voice import (
+    audio_id_for,
+    beds_word,
+    cache_audio,
+    describe_match,
+    get_cached_audio,
+    say,
+    spoken_phone,
+    text_to_speech,
+)
 
 log = logging.getLogger(__name__)
 
@@ -188,6 +197,153 @@ def audio(audio_id):
     if not data:
         return {"error": "audio_not_found"}, 404
     return Response(data, mimetype="audio/mpeg")
+
+
+def build_reasoning_trace(
+    shelter: dict, req: dict, distance_km: float | None, walk_minutes: int | None
+) -> list[str]:
+    """Return structured reasoning chips for a matched shelter, e.g. ['Accessible ✓', 'Pets OK ✓', '8 min walk', 'updated 4 min ago']."""
+    trace: list[str] = []
+
+    # Accessibility
+    if req.get("needs_accessible") and shelter.get("accessible"):
+        trace.append("Accessible ✓")
+    elif shelter.get("accessible") and not any(
+        req.get(k) for k in ("needs_accessible", "has_pet", "family", "is_couple")
+    ):
+        trace.append("Accessible")
+
+    # Pets
+    if req.get("has_pet") and shelter.get("pets_ok"):
+        trace.append("Pets OK ✓")
+    elif shelter.get("pets_ok") and not any(
+        req.get(k) for k in ("needs_accessible", "has_pet", "family", "is_couple")
+    ):
+        trace.append("Pets OK")
+
+    # Women only / gender
+    if req.get("gender") == "woman" and shelter.get("women_only"):
+        trace.append("Women only ✓")
+    elif shelter.get("women_only"):
+        trace.append("Women only")
+
+    # Family
+    if req.get("family") and shelter.get("families"):
+        trace.append("Families ✓")
+
+    # Couples
+    if req.get("is_couple") and shelter.get("couples"):
+        trace.append("Couples ✓")
+
+    # Youth
+    if req.get("age_group") == "youth" and shelter.get("youth"):
+        trace.append("Youth ✓")
+
+    # Walk / distance
+    if walk_minutes is not None:
+        trace.append(f"{walk_minutes} min walk")
+    elif distance_km is not None:
+        trace.append(f"{distance_km:.1f} km away")
+
+    # Freshness
+    mins = shelter.get("minutes_since_update", 0)
+    if mins < 1:
+        trace.append("updated just now")
+    elif mins < 60:
+        trace.append(f"updated {mins} min ago")
+    else:
+        trace.append(f"updated {round(mins / 60)}h ago")
+
+    return trace
+
+
+@bp.post("/api/match")
+def match_voice():
+    """Extract needs from transcript, rank real open beds, and return top 3 with reasoning traces."""
+    data = request.get_json(silent=True) or {}
+    transcript = (data.get("transcript") or "").strip()
+    if not transcript:
+        return {"error": "missing_transcript"}, 400
+
+    lat = data.get("lat")
+    lng = data.get("lng")
+    req = extract_voice_request(transcript)
+
+    # Resolve area from text first, fallback to caller's lat/lng
+    area = find_area(req.get("area_text"))
+    area_name = area[0] if area else None
+    if area:
+        origin = (area[1], area[2])
+    elif lat is not None and lng is not None:
+        try:
+            origin = (float(lat), float(lng))
+            area_name = "your location"
+        except (ValueError, TypeError):
+            origin = None
+    else:
+        origin = None
+
+    shelters = load_public_shelters()
+    ranked = rank_shelters(req, shelters, origin=origin, top_n=3)
+
+    matches = []
+    for item in ranked:
+        s = item["shelter"]
+        d_km = item.get("distance_km")
+        walk_mins = int(round(d_km * 1.3 / 5.0 * 60)) if d_km is not None else None
+        if walk_mins is not None and walk_mins < 1:
+            walk_mins = 1
+        trace = build_reasoning_trace(s, req, d_km, walk_mins)
+        matches.append({
+            "shelter": s,
+            "score": item["score"],
+            "distance_km": round(d_km, 2) if d_km is not None else None,
+            "walk_minutes": walk_mins,
+            "reasoning_trace": trace,
+            "reasoning_text": " · ".join(trace),
+        })
+
+    if area_name and area_name != "your location":
+        narration = f"Checking shelters near {area_name}..."
+    elif area_name == "your location":
+        narration = "Checking shelters near your location..."
+    else:
+        narration = "Checking shelters across Metro Vancouver..."
+
+    if matches:
+        top_shelter = matches[0]["shelter"]
+        if top_shelter["is_dv"]:
+            spoken_answer = say("dv", phone=spoken_phone(top_shelter.get("dv_phone", "")))
+        else:
+            spoken_answer = describe_match(ranked[0], area_name if area_name != "your location" else None)
+    else:
+        spoken_answer = say("no_match")
+
+    return {
+        "ok": True,
+        "criteria": req,
+        "area_name": area_name,
+        "narration": narration,
+        "spoken_answer": spoken_answer,
+        "matches": matches,
+    }
+
+
+@bp.post("/api/speak")
+def speak_text():
+    """Convert text to ElevenLabs speech and return audio URL, or signal browser TTS fallback."""
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    if not text:
+        return {"error": "missing_text"}, 400
+
+    audio_bytes = text_to_speech(text)
+    if audio_bytes:
+        audio_id = cache_audio(audio_bytes)
+        audio_url = f"/audio/{audio_id}.mp3"
+        return {"ok": True, "audio_url": audio_url}
+
+    return {"ok": False, "fallback_tts": True, "text": text}
 
 
 # --- Staff SMS --------------------------------------------------------------------

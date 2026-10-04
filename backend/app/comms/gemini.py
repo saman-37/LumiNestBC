@@ -49,7 +49,7 @@ def _heuristic_voice_extract(transcript: str) -> dict:
         res["family"] = True
     if re.search(r"\b(pet|dog|cat|animal|puppy|kitten)\b", t):
         res["has_pet"] = True
-    if re.search(r"\b(wheelchair|accessible|handicap|disabled|mobility)\b", t):
+    if re.search(r"\b(wheelchair|accessible|handicap|disabled|mobility|walker|cane|crutch|crutches)\b", t):
         res["needs_accessible"] = True
     if re.search(r"\b(couple|partner|wife|husband|together)\b", t):
         res["is_couple"] = True

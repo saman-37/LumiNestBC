@@ -21,6 +21,7 @@ def shelter(id, **fields):
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setattr(config, "TWILIO_AUTH_TOKEN", "")
+    monkeypatch.setattr(config, "ELEVENLABS_API_KEY", "")
     app = Flask(__name__)
     app.register_blueprint(twilio_routes.bp)
     return app.test_client()
@@ -125,3 +126,47 @@ def test_signature_required_when_token_set(client, monkeypatch):
         "https://api.example.org/twilio/voice/heard", params)
     signed = {"X-Twilio-Signature": signature}
     assert client.post("/twilio/voice/heard", data=params, headers=signed).status_code == 200
+
+
+def test_api_match_success(client, fake_backend):
+    res = client.post("/api/match", json={"transcript": "Woman with a walker near Metrotown", "lat": 49.25, "lng": -123.0})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["ok"] is True
+    assert data["criteria"]["gender"] == "woman"
+    assert "Checking shelters near" in data["narration"]
+    assert len(data["matches"]) > 0
+    top = data["matches"][0]
+    assert top["shelter"]["name"] == "Lantern House"
+    assert "reasoning_trace" in top
+    assert isinstance(top["reasoning_trace"], list)
+    assert top["reasoning_text"] != ""
+
+
+def test_api_match_empty_transcript(client):
+    res = client.post("/api/match", json={"transcript": ""})
+    assert res.status_code == 400
+    assert res.get_json()["error"] == "missing_transcript"
+
+
+def test_api_speak_fallback(client, monkeypatch):
+    monkeypatch.setattr(twilio_routes, "text_to_speech", lambda text: None)
+    res = client.post("/api/speak", json={"text": "Hello"})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["ok"] is False
+    assert data["fallback_tts"] is True
+
+
+def test_api_speak_cached_audio(client, monkeypatch):
+    monkeypatch.setattr(twilio_routes, "text_to_speech", lambda text: b"fake-mp3-bytes")
+    res = client.post("/api/speak", json={"text": "Hello"})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["ok"] is True
+    assert data["audio_url"].startswith("/audio/")
+    # Fetch audio
+    audio_res = client.get(data["audio_url"])
+    assert audio_res.status_code == 200
+    assert audio_res.data == b"fake-mp3-bytes"
+
