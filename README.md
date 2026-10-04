@@ -6,15 +6,23 @@
 
 A live, high-velocity shelter-bed network connecting outreach workers directly to verified open beds across Metro Vancouver. Built for **StormHacks 2026**.
 
-[![StormHacks 2026](https://img.shields.io/badge/StormHacks-2026-0b7f57?style=for-the-badge&logo=target&logoColor=white)](https://devpost.com)
-[![React 19](https://img.shields.io/badge/React-19.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![TimescaleDB](https://img.shields.io/badge/TimescaleDB-Tiger%20Data-FDB515?style=for-the-badge&logo=postgresql&logoColor=black)](https://timescale.com)
-[![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
-[![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Voice%20AI-black?style=for-the-badge&logo=soundcharts&logoColor=white)](https://elevenlabs.io)
+<br/>
+
+[![Live Web App](https://img.shields.io/badge/🚀_LIVE_APP-lumi--nest--bc.vercel.app-0b7f57?style=for-the-badge&logo=vercel&logoColor=white)](https://lumi-nest-bc.vercel.app)
+[![API Status](https://img.shields.io/badge/API_ONLINE-luminestbc--api.onrender.com-00c853?style=for-the-badge&logo=render&logoColor=white)](https://luminestbc-api.onrender.com/health)
+
+<br/>
+
+[![StormHacks 2026](https://img.shields.io/badge/StormHacks-2026-0b7f57?style=flat-square&logo=target&logoColor=white)](https://devpost.com)
+[![React 19](https://img.shields.io/badge/React-19.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![TimescaleDB](https://img.shields.io/badge/TimescaleDB-Tiger%20Data-FDB515?style=flat-square&logo=postgresql&logoColor=black)](https://timescale.com)
+[![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
+[![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Voice%20AI-black?style=flat-square&logo=soundcharts&logoColor=white)](https://elevenlabs.io)
 
 <p align="center">
+  <a href="https://lumi-nest-bc.vercel.app"><b>🌐 Open Live Web App</b></a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-the-solution">The Solution</a> •
   <a href="#-key-features">Key Features</a> •
@@ -142,6 +150,9 @@ LuminestBC is built and seeded with **67 real facilities across Metro Vancouver*
 
 ## 🚀 Quick Start
 
+> [!TIP]
+> **Prefer to test online?** You can test the fully deployed live application directly without any local installation: **[https://lumi-nest-bc.vercel.app](https://lumi-nest-bc.vercel.app)**
+
 ### Prerequisites
 - Node.js 20+
 - Python 3.11+ (or WSL / Ubuntu on Windows)
@@ -261,5 +272,7 @@ LumiNestBC/
 
 Built with ❤️ for Metro Vancouver by the **LuminestBC** team at **StormHacks 2026**.
 
-*Live Repository:* [github.com/saman-37/LumiNestBC](https://github.com/saman-37/LumiNestBC)  
-*Domain:* [luminestbc.tech](https://luminestbc.tech)
+* 🌐 **Live Web Application:** [https://lumi-nest-bc.vercel.app](https://lumi-nest-bc.vercel.app)
+* ⚡ **Live API Service:** [https://luminestbc-api.onrender.com](https://luminestbc-api.onrender.com)
+* 🔗 **Custom Domain:** [https://luminestbc.tech](https://luminestbc.tech)
+* 💻 **GitHub Repository:** [github.com/saman-37/LumiNestBC](https://github.com/saman-37/LumiNestBC)
