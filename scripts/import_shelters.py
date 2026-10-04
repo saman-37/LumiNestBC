@@ -1,17 +1,33 @@
 """Import shelters from a CSV into the database (insert or update by id).
 
-    python scripts/import_shelters.py                         # data/shelters_template.csv
+    python scripts/import_shelters.py                         # data/shelters.csv (else the template)
     python scripts/import_shelters.py data/real.csv --schema  # apply schema.sql first (new DB)
+    python scripts/import_shelters.py data/real.csv --geocode # fill blank lat/lng from address
 
-Columns: see data/shelters_template.csv. DV rows are always stored without address or
-coordinates, even if the CSV has them.
+Columns: see data/shelters_template.csv. DV rows are always stored without address,
+coordinates or staff phone, even if the CSV has them.
+
+--geocode looks up blank lat/lng on OpenStreetMap Nominatim (1 request per second) and
+writes the results back into the CSV. DV rows are never geocoded.
+
+Real shelters have no staff_phone in the CSV, so they can never get texts from us. If
+DEMO_STAFF_PHONE is set in .env, it becomes the staff_phone of the demo shelters below
+(in the database only; it's never written to the CSV).
 """
 import argparse
 import csv
+import json
+import os
+import time
+import urllib.parse
+import urllib.request
 
 from _common import ROOT, connect
 
 BOOL_COLS = ("is_full", "women_only", "youth", "families", "pets_ok", "accessible", "couples", "is_dv")
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+USER_AGENT = "LuminestBC-shelter-import/1.0 (StormHacks 2026 shelter-bed map; scripts/import_shelters.py)"
+DEMO_SHELTER_IDS = ("shelter-01", "shelter-20")  # Tap Board shelter, fictional Surrey women's shelter
 
 
 def parse_bool(value: str) -> bool:
@@ -35,18 +51,77 @@ def to_row(raw: dict) -> dict:
     if row["is_dv"]:
         if row["address"] or row["lat"] or row["lng"]:
             print(f"  ! {row['id']}: DV shelter had a location in the CSV; dropping it")
-        row.update(address=None, lat=None, lng=None)
+        if row["staff_phone"]:
+            print(f"  ! {row['id']}: DV shelter had a staff phone in the CSV; dropping it")
+        row.update(address=None, lat=None, lng=None, staff_phone=None)
     return row
+
+
+def geocode(address: str) -> tuple[float, float] | None:
+    query = urllib.parse.urlencode({"q": address, "format": "json", "limit": 1, "countrycodes": "ca"})
+    request = urllib.request.Request(f"{NOMINATIM_URL}?{query}", headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        results = json.load(response)
+    return (float(results[0]["lat"]), float(results[0]["lon"])) if results else None
+
+
+def fill_coordinates(raw_rows: list[dict]) -> list[str]:
+    """Fill blank lat/lng in place. Returns the ids that could not be geocoded."""
+    failed, last_request = [], 0.0
+    for raw in raw_rows:
+        if parse_bool(raw.get("is_dv", "")) or (blank_to_none(raw["lat"]) and blank_to_none(raw["lng"])):
+            continue
+        address = blank_to_none(raw["address"])
+        if not address:
+            failed.append(f"{raw['id']} (no address)")
+            continue
+        time.sleep(max(0.0, 1.0 - (time.monotonic() - last_request)))
+        last_request = time.monotonic()
+        try:
+            found = geocode(address)
+        except OSError as e:
+            failed.append(f"{raw['id']} ({address}: {e})")
+            continue
+        if found is None:
+            failed.append(f"{raw['id']} ({address}: no match)")
+            continue
+        raw["lat"], raw["lng"] = f"{found[0]:.6f}", f"{found[1]:.6f}"
+        print(f"  geocoded {raw['id']}: {raw['lat']}, {raw['lng']}")
+    return failed
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("csv", nargs="?", default=str(ROOT / "data" / "shelters_template.csv"))
+    parser.add_argument("csv", nargs="?", help="default: data/shelters.csv, else data/shelters_template.csv")
     parser.add_argument("--schema", action="store_true", help="apply backend/sql/schema.sql first")
+    parser.add_argument("--geocode", action="store_true",
+                        help="fill blank lat/lng from address via Nominatim and save them to the CSV")
     args = parser.parse_args()
+    if args.csv is None:
+        real = ROOT / "data" / "shelters.csv"
+        args.csv = str(real if real.exists() else ROOT / "data" / "shelters_template.csv")
+    print(f"importing {args.csv}")
 
     with open(args.csv, newline="") as f:
-        rows = [to_row(r) for r in csv.DictReader(f)]
+        reader = csv.DictReader(f)
+        raw_rows = list(reader)
+
+    failed = []
+    if args.geocode:
+        failed = fill_coordinates(raw_rows)
+        with open(args.csv, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
+            writer.writeheader()
+            writer.writerows(raw_rows)
+        print(f"coordinates saved to {args.csv}")
+
+    rows = [to_row(r) for r in raw_rows]
+    demo_phone = blank_to_none(os.getenv("DEMO_STAFF_PHONE"))
+    if demo_phone:
+        for row in rows:
+            if row["id"] in DEMO_SHELTER_IDS and not row["is_dv"]:
+                row["staff_phone"] = demo_phone
+        print(f"DEMO_STAFF_PHONE set as staff phone for {', '.join(DEMO_SHELTER_IDS)}")
 
     with connect() as conn:
         if args.schema:
@@ -75,6 +150,10 @@ def main() -> None:
             )
             print(f"  {row['id']}: {row['name']} ({row['open_beds']} open)")
     print(f"imported {len(rows)} shelter(s). Next: python scripts/generate_tag_links.py")
+    if failed:
+        print(f"\n{len(failed)} shelter(s) could not be geocoded (imported without a map pin):")
+        for line in failed:
+            print(f"  ! {line}")
 
 
 if __name__ == "__main__":
