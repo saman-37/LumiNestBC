@@ -21,6 +21,7 @@ def shelter(id, **fields):
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setattr(config, "TWILIO_AUTH_TOKEN", "")
+    monkeypatch.setattr(config, "ELEVENLABS_API_KEY", "")  # plain <Say>, no network
     app = Flask(__name__)
     app.register_blueprint(twilio_routes.bp)
     return app.test_client()
@@ -125,3 +126,18 @@ def test_signature_required_when_token_set(client, monkeypatch):
         "https://api.example.org/twilio/voice/heard", params)
     signed = {"X-Twilio-Signature": signature}
     assert client.post("/twilio/voice/heard", data=params, headers=signed).status_code == 200
+
+
+def test_elevenlabs_audio_is_played_and_reused(client, monkeypatch):
+    calls = []
+    monkeypatch.setattr(twilio_routes, "text_to_speech", lambda text: calls.append(text) or b"MP3")
+    monkeypatch.setattr(config, "BACKEND_PUBLIC_URL", "https://api.example.org")
+    first = client.post("/twilio/voice").get_data(as_text=True)
+    client.post("/twilio/voice")
+    assert "<Play>https://api.example.org/audio/" in first and "<Say" not in first
+    assert len(calls) == 3  # greeting, prompt, no_speech generated once, then reused
+
+    audio_id = first.split("/audio/")[1].split(".mp3")[0]
+    audio = client.get(f"/audio/{audio_id}.mp3")
+    assert audio.status_code == 200 and audio.data == b"MP3"
+    assert client.get("/audio/missing.mp3").status_code == 404

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LuminestBC Demo Kit</title>
+<!--
+  Printable demo materials. US Letter, portrait, black and white.
+  Print from Chrome: Margins "None" or "Default", Scale 100%, Headers and footers off.
+  Page 1-2: Tap Board labels (stick an NFC sticker on each dashed circle).
+  Page 3:   Judge instruction cards (cut in half).
+  Page 4:   Table tent (fold along the dashed line).
+  Before printing, replace [VOICE LINE NUMBER] below.
+-->
+<style>
+  @page { size: letter portrait; margin: 0; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #d9d9d9;
+    color: #000;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* One sheet of US Letter. */
+  .sheet {
+    width: 8.5in;
+    height: 11in;
+    margin: 0.4in auto;
+    padding: 0.5in;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .sheet-note {
+    position: absolute;
+    bottom: 0.18in;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 8pt;
+    color: #666;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .sheet { margin: 0; box-shadow: none; break-after: page; page-break-after: always; }
+    .sheet:last-child { break-after: auto; page-break-after: auto; }
+  }
+
+  /* Cut line around each item. */
+  .cut { border: 1.5pt dashed #000; border-radius: 0.12in; }
+
+  /* ---------- Tap Board labels ---------- */
+  .label {
+    height: 4.85in;
+    padding: 0.3in 0.35in;
+    display: flex;
+    flex-direction: column;
+  }
+  .label-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.2in;
+  }
+  .label-word {
+    font-size: 64pt;
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+  .label-word.small { font-size: 52pt; }
+  .label-badge {
+    flex: none;
+    font-size: 40pt;
+    font-weight: 900;
+    border: 4pt solid #000;
+    border-radius: 0.15in;
+    padding: 0.02in 0.16in;
+    line-height: 1.15;
+  }
+  .label-badge.invert { background: #000; color: #fff; }
+  .label-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.3in;
+  }
+  .label-icon { width: 2.3in; height: 2.3in; flex: none; }
+  .label-icon svg { width: 100%; height: 100%; display: block; }
+  .label-sub {
+    font-size: 15pt;
+    font-weight: 600;
+    margin-top: 0.06in;
+  }
+
+  /* Where the NFC sticker goes. Sized for 25-35 mm round stickers. */
+  .target {
+    flex: none;
+    width: 1.75in;
+    height: 1.75in;
+    border: 3pt dashed #000;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #444;
+    position: relative;
+  }
+  .target::before {
+    /* faint crosshair to centre the sticker */
+    content: "";
+    position: absolute;
+    width: 0.3in; height: 0.3in;
+    background:
+      linear-gradient(#999, #999) center / 1pt 100% no-repeat,
+      linear-gradient(#999, #999) center / 100% 1pt no-repeat;
+  }
+  .target span { position: relative; top: 0.3in; }
+  .target-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.08in; }
+  .target-caption { font-size: 12pt; font-weight: 700; }
+
+  /* ---------- Judge cards ---------- */
+  .judge {
+    height: 4.85in;
+    padding: 0.3in 0.4in;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .judge-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 3pt solid #000;
+    padding-bottom: 0.06in;
+  }
+  .judge-head h2 { margin: 0; font-size: 26pt; font-weight: 900; }
+  .judge-head .brand { font-size: 12pt; font-weight: 700; }
+  .judge-step {
+    display: flex;
+    gap: 0.22in;
+    align-items: center;
+  }
+  .judge-step p { margin: 0; font-size: 20pt; line-height: 1.3; font-weight: 600; }
+  .judge-step svg { flex: none; width: 1.5in; height: 1.5in; }
+  .voice {
+    border: 3pt solid #000;
+    border-radius: 0.12in;
+    padding: 0.1in 0.2in;
+    text-align: center;
+  }
+  .voice-label { font-size: 13pt; font-weight: 700; line-height: 1.25; }
+  .voice-number { font-size: 32pt; font-weight: 900; letter-spacing: 0.01em; white-space: nowrap; }
+
+  /* ---------- Table tent ---------- */
+  .tent { padding: 0; justify-content: stretch; }
+  .tent-half {
+    height: 5.5in;
+    padding: 0.55in 0.6in;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 0.3in;
+  }
+  .tent-half.flip { transform: rotate(180deg); }
+  .tent-fold {
+    position: absolute;
+    top: 5.5in; left: 0; right: 0;
+    border-top: 1.5pt dashed #000;
+  }
+  .tent-fold span {
+    position: absolute;
+    right: 0.3in; top: -0.11in;
+    background: #fff;
+    padding: 0 0.08in;
+    font-size: 8pt;
+    color: #666;
+  }
+  .tent-name {
+    font-size: 66pt;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .tent-tagline {
+    font-size: 25pt;
+    font-weight: 700;
+    line-height: 1.25;
+    max-width: 6.6in;
+  }
+  .tent-note {
+    font-size: 13pt;
+    font-weight: 600;
+    border: 2pt solid #000;
+    border-radius: 999px;
+    padding: 0.07in 0.24in;
+  }
+</style>
+</head>
+<body>
+
+<!-- Shared icon definitions (inline SVG, no external assets). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Simple bed: headboard, mattress, pillow, legs. -->
+    <g id="bed" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 46 V150"/>
+      <path d="M14 116 H186 V150"/>
+      <path d="M14 116 V96 H186 V116"/>
+      <rect x="26" y="74" width="40" height="22" rx="8"/>
+      <path d="M72 96 V82 Q72 74 80 74 H170 Q186 74 186 90 V96"/>
+    </g>
+  </defs>
+</svg>
+
+<!-- ===================== Page 1: Tap Board labels ===================== -->
+<section class="sheet">
+  <div class="label cut">
+    <div class="label-top">
+      <div>
+        <div class="label-word">Bed freed</div>
+        <div class="label-sub">Tap when a bed opens up</div>
+      </div>
+      <div class="label-badge">+1</div>
+    </div>
+    <div class="label-body">
+      <div class="label-icon">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <use href="#bed"/>
+          <circle cx="150" cy="40" r="30" fill="#fff" stroke="#000" stroke-width="7"/>
+          <path d="M150 24 V56 M134 40 H166" stroke="#000" stroke-width="8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="target-wrap">
+        <div class="target"><span>NFC sticker</span></div>
+        <div class="target-caption">Tap here</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="label cut">
+    <div class="label-top">
+      <div>
+        <div class="label-word">Bed filled</div>
+        <div class="label-sub">Tap when someone takes a bed</div>
+      </div>
+      <div class="label-badge">&minus;1</div>
+    </div>
+    <div class="label-body">
+      <div class="label-icon">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <use href="#bed"/>
+          <!-- person lying in bed -->
+          <circle cx="46" cy="70" r="13" fill="#000"/>
+          <path d="M66 88 Q66 66 92 66 H172 Q186 66 186 84 V96 H66 Z" fill="#000"/>
+          <circle cx="150" cy="34" r="28" fill="#fff" stroke="#000" stroke-width="7"/>
+          <path d="M134 34 H166" stroke="#000" stroke-width="8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="target-wrap">
+        <div class="target"><span>NFC sticker</span></div>
+        <div class="target-caption">Tap here</div>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-note">LuminestBC demo kit · Tap Board labels 1/2 · Cut along dashed lines, stick an NFC sticker on each circle</div>
+</section>
+
+<!-- ===================== Page 2: Tap Board labels ===================== -->
+<section class="sheet">
+  <div class="label cut">
+    <div class="label-top">
+      <div>
+        <div class="label-word">We&rsquo;re full</div>
+        <div class="label-sub">Tap to set open beds to 0</div>
+      </div>
+      <div class="label-badge invert">0</div>
+    </div>
+    <div class="label-body">
+      <div class="label-icon">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <!-- octagon stop sign -->
+          <polygon points="62,10 138,10 190,62 190,138 138,190 62,190 10,138 10,62" fill="#000"/>
+          <text x="100" y="117" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="50" font-weight="900" fill="#fff">FULL</text>
+        </svg>
+      </div>
+      <div class="target-wrap">
+        <div class="target"><span>NFC sticker</span></div>
+        <div class="target-caption">Tap here</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="label cut">
+    <div class="label-top">
+      <div>
+        <div class="label-word small">Arrival</div>
+        <div class="label-sub" style="font-size:24pt;font-weight:800">&mdash; tap at the door</div>
+      </div>
+      <div class="label-badge">&#10003;</div>
+    </div>
+    <div class="label-body">
+      <div class="label-icon">
+        <svg viewBox="0 0 200 200" aria-hidden="true" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+          <!-- open door with arrow walking in -->
+          <path d="M60 186 V18 H150 V186"/>
+          <path d="M60 18 L112 34 V194 L60 186 Z" fill="#000"/>
+          <circle cx="102" cy="112" r="5" fill="#fff" stroke="none"/>
+          <path d="M14 186 H190"/>
+          <path d="M192 104 H160 M174 90 L160 104 L174 118" stroke-width="8"/>
+        </svg>
+      </div>
+      <div class="target-wrap">
+        <div class="target"><span>NFC sticker</span></div>
+        <div class="target-caption">Tap at the door</div>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-note">LuminestBC demo kit · Tap Board labels 2/2 · The Arrival label goes on the door card</div>
+</section>
+
+<!-- ===================== Page 3: Judge instruction cards ===================== -->
+<section class="sheet">
+  <!-- Two identical cards per page; cut in half. -->
+  <div class="judge cut">
+    <div class="judge-head">
+      <h2>Try it yourself</h2>
+      <span class="brand">LuminestBC</span>
+    </div>
+    <div class="judge-step">
+      <svg viewBox="0 0 120 120" aria-hidden="true" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round">
+        <circle cx="60" cy="86" r="28" stroke-dasharray="8 6"/>
+        <rect x="40" y="8" width="40" height="70" rx="8" fill="#fff"/>
+        <path d="M54 16 H66"/>
+        <path d="M28 54 Q20 64 28 74 M18 48 Q6 64 18 80"/>
+      </svg>
+      <p>Hold the top of your iPhone (or the back of your Android) on the circle, then tap the notification.</p>
+    </div>
+    <div class="voice">
+      <div class="voice-label">No smartphone? Call the voice line:</div>
+      <div class="voice-number">[VOICE LINE NUMBER]</div>
+    </div>
+  </div>
+
+  <div class="judge cut">
+    <div class="judge-head">
+      <h2>Try it yourself</h2>
+      <span class="brand">LuminestBC</span>
+    </div>
+    <div class="judge-step">
+      <svg viewBox="0 0 120 120" aria-hidden="true" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round">
+        <circle cx="60" cy="86" r="28" stroke-dasharray="8 6"/>
+        <rect x="40" y="8" width="40" height="70" rx="8" fill="#fff"/>
+        <path d="M54 16 H66"/>
+        <path d="M28 54 Q20 64 28 74 M18 48 Q6 64 18 80"/>
+      </svg>
+      <p>Hold the top of your iPhone (or the back of your Android) on the circle, then tap the notification.</p>
+    </div>
+    <div class="voice">
+      <div class="voice-label">No smartphone? Call the voice line:</div>
+      <div class="voice-number">[VOICE LINE NUMBER]</div>
+    </div>
+  </div>
+  <div class="sheet-note">LuminestBC demo kit · Judge cards · Cut in half</div>
+</section>
+
+<!-- ===================== Page 4: Table tent ===================== -->
+<section class="sheet tent">
+  <div class="tent-half flip">
+    <div class="tent-name">
+      LuminestBC
+    </div>
+    <div class="tent-tagline">A bed tonight, found in 60&nbsp;seconds,<br>not 60&nbsp;phone&nbsp;calls.</div>
+    <div class="tent-note">Demo data: real shelter names, invented bed counts.</div>
+  </div>
+  <div class="tent-fold"><span>fold here</span></div>
+  <div class="tent-half">
+    <div class="tent-name">
+      LuminestBC
+    </div>
+    <div class="tent-tagline">A bed tonight, found in 60&nbsp;seconds,<br>not 60&nbsp;phone&nbsp;calls.</div>
+    <div class="tent-note">Demo data: real shelter names, invented bed counts.</div>
+  </div>
+</section>
+
+</body>
+</html>
