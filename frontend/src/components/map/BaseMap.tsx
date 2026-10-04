@@ -1,0 +1,69 @@
+import type { MaplibreGL } from 'leaflet'
+import type { StyleSpecification } from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import { useEffect, useState } from 'react'
+import { TileLayer, useMap } from 'react-leaflet'
+import { loadMapStyle, VECTOR_ATTRIBUTION } from '../../lib/mapStyle'
+
+// Raster fallback when OpenFreeMap is unreachable: CARTO Voyager (needs VITE_CARTO_KEY), else OSM.
+const CARTO_KEY = import.meta.env.VITE_CARTO_KEY
+const FALLBACK_TILES = CARTO_KEY
+  ? `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`
+  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const FALLBACK_ATTRIBUTION = CARTO_KEY ? '© OpenStreetMap contributors © CARTO' : '© OpenStreetMap contributors'
+
+function VectorLayer({ style }: { style: StyleSpecification }) {
+  const map = useMap()
+  useEffect(() => {
+    // MapLibre is large, so it's loaded only when the map page needs it.
+    let layer: MaplibreGL | null = null
+    let cancelled = false
+    Promise.all([
+      import('@maplibre/maplibre-gl-leaflet'),
+      import('maplibre-gl'),
+      // Bundled by Vite into one worker file; MapLibre's own relative worker URL breaks once bundled.
+      import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'),
+    ]).then(([{ maplibreGL }, maplibre, worker]) => {
+      if (cancelled) return
+      maplibre.setWorkerUrl(worker.default)
+      layer = maplibreGL({ style, attributionControl: false })
+      layer.addTo(map)
+    })
+    return () => {
+      cancelled = true
+      layer?.remove()
+    }
+  }, [map, style])
+  return null
+}
+
+let cachedStyle: Promise<StyleSpecification> | null = null
+
+/** Custom-styled vector basemap, with a raster fallback. Reports the attribution to show. */
+export function BaseMap({ onAttribution }: { onAttribution: (text: string) => void }) {
+  const [state, setState] = useState<{ style: StyleSpecification } | 'loading' | 'fallback'>('loading')
+
+  useEffect(() => {
+    let cancelled = false
+    cachedStyle ??= loadMapStyle()
+    cachedStyle
+      .then((style) => {
+        if (cancelled) return
+        setState({ style })
+        onAttribution(VECTOR_ATTRIBUTION)
+      })
+      .catch(() => {
+        cachedStyle = null
+        if (cancelled) return
+        setState('fallback')
+        onAttribution(FALLBACK_ATTRIBUTION)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [onAttribution])
+
+  if (state === 'loading') return null
+  if (state === 'fallback') return <TileLayer url={FALLBACK_TILES} maxZoom={19} />
+  return <VectorLayer style={state.style} />
+}

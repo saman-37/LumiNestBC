@@ -4,7 +4,7 @@ Call flow:
   POST /twilio/voice         greeting + <Gather input="speech">
   POST /twilio/voice/heard   keep SpeechResult in memory by CallSid, reply filler + <Redirect> at once
   POST /twilio/voice/answer  gemini.extract_voice_request() -> matcher.rank_shelters() -> speak top 2
-  GET  /audio/<id>.mp3       ElevenLabs audio cached by voice.text_to_speech()   (TODO)
+  GET  /audio/<id>.mp3       ElevenLabs audio cached by voice.text_to_speech()
   POST /twilio/sms           staff text -> gemini.parse_staff_text() -> bed change (source='sms')
 
 Gemini runs in /answer, not /heard, so the caller hears the filler line while it works.
@@ -27,7 +27,7 @@ from ..db import transaction
 from ..sockets import emit_shelter_update
 from .gemini import extract_voice_request, parse_staff_text
 from .matcher import find_area, rank_shelters
-from .voice import beds_word, describe_match, say
+from .voice import beds_word, cache_audio, describe_match, get_cached_audio, say, text_to_speech
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +48,16 @@ def twiml(*verbs: str) -> Response:
 
 def say_verb(text: str) -> str:
     return f'<Say language="{LANGUAGE}">{escape(text)}</Say>'
+
+
+def play_or_say(text: str) -> str:
+    """Return Twilio <Play> using ElevenLabs audio if available, else fallback to <Say>."""
+    audio_bytes = text_to_speech(text)
+    if audio_bytes:
+        audio_id = cache_audio(audio_bytes)
+        audio_url = f"{config.BACKEND_PUBLIC_URL.rstrip('/')}/audio/{audio_id}.mp3"
+        return f"<Play>{escape(audio_url)}</Play>"
+    return say_verb(text)
 
 
 def sms_reply(text: str) -> Response:
@@ -113,10 +123,10 @@ def answer_lines(transcript: str) -> list[str]:
 def voice_start():
     """Answer the call: greet, then listen for the caller's needs."""
     return twiml(
-        say_verb(say("greeting")),
+        play_or_say(say("greeting")),
         f'<Gather input="speech" action="/twilio/voice/heard" method="POST" '
-        f'speechTimeout="auto" language="{LANGUAGE}">{say_verb(say("prompt"))}</Gather>',
-        say_verb(say("no_speech")),
+        f'speechTimeout="auto" language="{LANGUAGE}">{play_or_say(say("prompt"))}</Gather>',
+        play_or_say(say("no_speech")),
     )
 
 
@@ -126,9 +136,9 @@ def voice_heard():
     transcript = request.form.get("SpeechResult", "").strip()
     call_sid = request.form.get("CallSid", "")
     if not transcript or not call_sid:
-        return twiml(say_verb(say("no_speech")), "<Hangup/>")
+        return twiml(play_or_say(say("no_speech")), "<Hangup/>")
     _remember(call_sid, transcript)
-    return twiml(say_verb(say("filler")), '<Redirect method="POST">/twilio/voice/answer</Redirect>')
+    return twiml(play_or_say(say("filler")), '<Redirect method="POST">/twilio/voice/answer</Redirect>')
 
 
 @bp.post("/twilio/voice/answer")
@@ -136,19 +146,22 @@ def voice_answer():
     """Extract needs, rank real beds and speak the top matches. Never fails the call."""
     transcript = _take(request.form.get("CallSid", ""))
     if transcript is None:
-        return twiml(say_verb(say("no_match")), "<Hangup/>")
+        return twiml(play_or_say(say("no_match")), "<Hangup/>")
     try:
         lines = answer_lines(transcript)
     except Exception as exc:  # noqa: BLE001  any failure -> point the caller to BC 211
         log.warning("voice answer failed: %s", type(exc).__name__)  # never log the transcript
         lines = [say("no_match")]
-    return twiml(*(say_verb(line) for line in lines), "<Hangup/>")
+    return twiml(*(play_or_say(line) for line in lines), "<Hangup/>")
 
 
 @bp.get("/audio/<audio_id>.mp3")
 def audio(audio_id):
-    """TODO(Communications): return cached ElevenLabs MP3 for audio_id."""
-    return {"error": "not_implemented", "tier": 2}, 501
+    """Return cached ElevenLabs MP3 for audio_id."""
+    data = get_cached_audio(audio_id)
+    if not data:
+        return {"error": "audio_not_found"}, 404
+    return Response(data, mimetype="audio/mpeg")
 
 
 # --- Staff SMS --------------------------------------------------------------------
