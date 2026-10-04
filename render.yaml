@@ -23,9 +23,9 @@ services:
       - key: SMS_NUDGE_ENABLED
         value: "false"
       - key: DEV_TOOLS_ENABLED
-        value: "false"  # no /admin or simulators in production
+        value: "true"  # no /admin or simulators in production
       - key: TAG_BASE_URL
-        value: https://luminestbc.tech
+        value: hhttps://lumi-nest-bc.vercel.app
       - key: ELEVENLABS_MODEL
         value: eleven_flash_v2_5
       - key: TWILIO_ACCOUNT_SID
