@@ -251,7 +251,7 @@ export function VoiceMatchSheet({ open, onClose, coords, onHoldShelter, onSelect
                 </div>
                 <div>
                   <h2 className="font-display text-[18px] font-bold text-text">Voice Bed Match</h2>
-                  <p className="text-[12px] text-text-muted">Find & hold in 60 seconds with AI</p>
+                  <p className="text-[12px] text-text-muted">Find & hold open beds with AI</p>
                 </div>
               </div>
               <button
