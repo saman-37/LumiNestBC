@@ -1,9 +1,12 @@
+import hashlib
 import json
 import logging
 import threading
 import time
+import urllib.error
 import urllib.request
 import uuid
+from pathlib import Path
 
 from .. import config
 from .http import ssl_context
@@ -175,14 +178,60 @@ def clear_audio_cache() -> None:
         _BY_TEXT.clear()
 
 
+DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
+_paused_until = 0.0  # time.monotonic() until which ElevenLabs isn't asked (after a refusal)
+
+
+def log_tts_config() -> None:
+    """Startup line showing what the voice line will use. Lengths only, never the key."""
+    key, voice = config.ELEVENLABS_API_KEY, config.ELEVENLABS_VOICE_ID
+    if not key:
+        logger.info("voice: ELEVENLABS_API_KEY not set; calls use Twilio <Say>")
+        return
+    logger.info("voice: ElevenLabs key set (length %d), voice id %s (length %d), model %s, disk cache %s",
+                len(key), "set" if voice else f"default {DEFAULT_VOICE_ID}", len(voice),
+                config.ELEVENLABS_MODEL, config.AUDIO_DISK_CACHE_DIR or "off")
+
+
+def _disk_path(text: str, voice: str) -> Path | None:
+    if not config.AUDIO_DISK_CACHE_DIR:
+        return None
+    digest = hashlib.sha256(f"{voice}|{config.ELEVENLABS_MODEL}|{text}".encode()).hexdigest()[:40]
+    return Path(config.AUDIO_DISK_CACHE_DIR) / f"{digest}.mp3"
+
+
+def _refusal_reason(exc: urllib.error.HTTPError) -> str:
+    """ElevenLabs' own reason, e.g. "quota_exceeded: This request exceeds your quota...". Never the key."""
+    try:
+        detail = json.loads(exc.read().decode("utf-8", "replace")).get("detail")
+        if isinstance(detail, dict):
+            return f"{detail.get('status') or detail.get('code')}: {detail.get('message', '')}".strip()
+        return str(detail)[:200]
+    except Exception:  # noqa: BLE001
+        return exc.reason or ""
+
+
+def resume_tts() -> None:
+    """Forget a previous refusal (tests, or after topping up the account)."""
+    global _paused_until
+    _paused_until = 0.0
+
+
 def text_to_speech(text: str, voice_id: str | None = None) -> bytes | None:
-    """Return MP3 bytes for text from ElevenLabs, or None on failure or missing config."""
+    """Return MP3 bytes for text: from the disk cache, else ElevenLabs. None on failure or missing config."""
+    global _paused_until
     api_key = config.ELEVENLABS_API_KEY
-    target_voice = voice_id or config.ELEVENLABS_VOICE_ID or "JBFqnCBsd6RMkjVDRZzb"
+    target_voice = voice_id or config.ELEVENLABS_VOICE_ID or DEFAULT_VOICE_ID
 
     if not api_key:
         logger.warning("ELEVENLABS_API_KEY not set; falling back to Twilio <Say>")
         return None
+
+    cached = _disk_path(text, target_voice)
+    if cached is not None and cached.is_file():
+        return cached.read_bytes()
+    if time.monotonic() < _paused_until:
+        return None  # ElevenLabs refused recently; the caller uses the fallback voice
 
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{target_voice}"
     headers = {
@@ -208,8 +257,23 @@ def text_to_speech(text: str, voice_id: str | None = None) -> bytes | None:
         )
         with urllib.request.urlopen(req, timeout=5, context=ssl_context()) as resp:
             if resp.status == 200:
-                return resp.read()
+                audio = resp.read()
+                if cached is not None:
+                    try:
+                        cached.parent.mkdir(parents=True, exist_ok=True)
+                        cached.write_bytes(audio)
+                    except OSError as exc:
+                        logger.warning("voice: couldn't write the audio cache (%s)", exc)
+                return audio
             logger.warning("ElevenLabs responded with status %s", resp.status)
+    except urllib.error.HTTPError as exc:
+        reason = _refusal_reason(exc)
+        if exc.code in (401, 402, 403, 429):
+            _paused_until = time.monotonic() + config.TTS_PAUSE_AFTER_REFUSAL_SECONDS
+            logger.error("ElevenLabs refused text-to-speech (HTTP %s, %s). Using the fallback voice for %d min.",
+                         exc.code, reason, config.TTS_PAUSE_AFTER_REFUSAL_SECONDS // 60)
+        else:
+            logger.error("ElevenLabs text-to-speech failed (HTTP %s, %s)", exc.code, reason)
     except Exception as exc:
         logger.error("ElevenLabs text-to-speech request failed: %s", exc)
 

@@ -12,6 +12,7 @@ import type {
   TapResponse,
   UndoResponse,
   VoiceMatchResponse,
+  VoiceLine,
   VoiceSimResult,
 } from './types'
 import type { Worker } from './worker'
@@ -115,6 +116,8 @@ export const adminApi = {
   expireHolds: (key: string) => send<{ expired: number }>('POST', '/api/admin/expire-holds', {}, { 'X-Admin-Key': key }),
   makeStale: (key: string, id: string) =>
     send<{ shelter: Shelter }>('POST', `/api/admin/shelters/${enc(id)}/stale`, {}, { 'X-Admin-Key': key }),
+  voiceIntro: (key: string) =>
+    request<{ lines: VoiceLine[] }>('/api/dev/voice/intro', { headers: { 'X-Admin-Key': key } }),
   voice: (key: string, transcript: string) =>
     send<VoiceSimResult>('POST', '/api/dev/voice', { transcript }, { 'X-Admin-Key': key }),
   sms: (key: string, from: string, body: string) =>

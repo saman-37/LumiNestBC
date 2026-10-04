@@ -206,11 +206,9 @@ export default function MapPage() {
   const requestHoldRef = useRef((shelter: Shelter) => {
     void shelter
   })
-  requestHoldRef.current = (shelter: Shelter) => {
-    const worker = loadWorker()
-    if (worker) hold(shelter, worker)
-    else setPendingHold(shelter)
-  }
+  // Every hold asks who's holding (pre-filled with the last name used), so a shared phone or a
+  // second worker can change it each time.
+  requestHoldRef.current = (shelter: Shelter) => setPendingHold(shelter)
   const requestHold = useCallback((shelter: Shelter) => requestHoldRef.current(shelter), [])
 
   // ---- pieces ----
@@ -448,6 +446,8 @@ export default function MapPage() {
       />
       <WorkerSheet
         open={pendingHold !== null}
+        shelterName={pendingHold?.name ?? null}
+        initial={pendingHold ? loadWorker() : null}
         onClose={() => setPendingHold(null)}
         onSave={(worker) => {
           saveWorker(worker)

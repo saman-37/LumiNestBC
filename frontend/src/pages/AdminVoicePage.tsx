@@ -65,16 +65,20 @@ function playLine(line: VoiceLine, stopped: () => boolean): Promise<void> {
   })
 }
 
+type Phase = 'idle' | 'intro' | 'waiting' | 'answering'
+
 function Simulator({ adminKey }: { adminKey: string }) {
   const toast = useToast()
   const [bubbles, setBubbles] = useState<Bubble[]>([])
   const [result, setResult] = useState<VoiceSimResult | null>(null)
-  const [busy, setBusy] = useState(false)
+  // Like a real call: the line speaks first (intro), then waits for the caller, then answers.
+  const [phase, setPhase] = useState<Phase>('idle')
   const [listening, setListening] = useState(false)
   const [text, setText] = useState('')
   const stopRef = useRef(false)
   const recognition = useRef<Recognition | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  const busy = phase === 'intro' || phase === 'answering'
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'nearest' }) // returns a Promise in newer browsers: don't return it
@@ -82,26 +86,53 @@ function Simulator({ adminKey }: { adminKey: string }) {
   useEffect(() => () => {
     stopRef.current = true
     window.speechSynthesis?.cancel()
+    recognition.current?.stop()
   }, [])
 
-  async function call(transcript: string) {
-    if (!transcript.trim() || busy) return
+  async function speak(lines: VoiceLine[]) {
+    for (const line of lines) {
+      if (stopRef.current) return
+      setBubbles((b) => [...b, { who: 'line', text: line.text, note: line.audio_url ? undefined : "Twilio's voice (fallback)" }])
+      await playLine(line, () => stopRef.current)
+    }
+  }
+
+  /** Pick up: greeting + "Tell me who needs a bed…", then wait for the caller (and listen if we can). */
+  async function startCall(autoListen = true): Promise<boolean> {
     stopRef.current = false
-    setBusy(true)
     setResult(null)
-    setBubbles([{ who: 'caller', text: transcript.trim() }])
+    setBubbles([])
+    setPhase('intro')
     try {
-      const res = await adminApi.voice(adminKey, transcript.trim())
+      const { lines } = await adminApi.voiceIntro(adminKey)
+      await speak(lines)
+    } catch (e) {
+      toast(`Voice simulator failed (${e instanceof ApiError ? e.code : 'network_error'})`, 'error')
+      setPhase('idle')
+      return false
+    }
+    if (stopRef.current) return false
+    setPhase('waiting')
+    if (autoListen) listen()
+    return true
+  }
+
+  /** The caller has spoken: filler while the pipeline runs, then the answer. */
+  async function call(transcript: string) {
+    const said = transcript.trim()
+    if (!said || busy) return
+    if (phase === 'idle' && !(await startCall(false))) return // a typed / rehearsed line also picks up first
+    recognition.current?.stop()
+    setPhase('answering')
+    setBubbles((b) => [...b, { who: 'caller', text: said }])
+    try {
+      const res = await adminApi.voice(adminKey, said)
       setResult(res)
-      for (const line of res.lines) {
-        if (stopRef.current) break
-        setBubbles((b) => [...b, { who: 'line', text: line.text, note: line.audio_url ? undefined : "Twilio's voice (fallback)" }])
-        await playLine(line, () => stopRef.current)
-      }
+      await speak(res.lines.filter((line) => line.kind !== 'greeting')) // already said when the call started
     } catch (e) {
       toast(`Voice simulator failed (${e instanceof ApiError ? e.code : 'network_error'})`, 'error')
     } finally {
-      setBusy(false)
+      setPhase('idle')
     }
   }
 
@@ -109,7 +140,7 @@ function Simulator({ adminKey }: { adminKey: string }) {
     stopRef.current = true
     window.speechSynthesis?.cancel()
     recognition.current?.stop()
-    setBusy(false)
+    setPhase('idle')
   }
 
   function listen() {
@@ -118,7 +149,7 @@ function Simulator({ adminKey }: { adminKey: string }) {
     r.lang = 'en-CA'
     r.interimResults = false
     r.onresult = (e) => call(e.results[0][0].transcript)
-    r.onerror = () => toast("Didn't catch that. Try again or type it.", 'error')
+    r.onerror = () => toast("Didn't catch that. Speak again, or type it.", 'error')
     r.onend = () => setListening(false)
     recognition.current = r
     setListening(true)
@@ -131,15 +162,19 @@ function Simulator({ adminKey }: { adminKey: string }) {
     setText('')
   }
 
+  const status = { idle: '· ready', intro: '· answering the phone', waiting: '· your turn: speak or type', answering: '· checking beds' }[phase]
+
   return (
     <>
       <div className="rounded-[24px] bg-tooltip-bg p-4 text-white shadow-[var(--shadow-float)]">
         <div className="flex items-center gap-2 text-[13px] text-tooltip-body">
-          <Phone aria-hidden size={16} /> LuminestBC voice line {busy ? '· on a call' : '· ready'}
+          <Phone aria-hidden size={16} /> LuminestBC voice line {status}
         </div>
         <div className="mt-3 flex min-h-[180px] flex-col gap-2" aria-live="polite">
           {bubbles.length === 0 && (
-            <p className="text-[15px] text-tooltip-body">Press the mic and speak like a caller, or pick a rehearsed line.</p>
+            <p className="text-[15px] text-tooltip-body">
+              Press <strong className="text-white">Call</strong>. The line greets you, then waits: speak (or type) like a caller.
+            </p>
           )}
           {bubbles.map((b, i) => (
             <div key={i} className={`max-w-[88%] rounded-[16px] px-3 py-2 text-[15px] ${b.who === 'caller' ? 'self-end bg-[#2f7df6]' : 'self-start bg-white/10'}`}>
@@ -150,23 +185,34 @@ function Simulator({ adminKey }: { adminKey: string }) {
           <div ref={endRef} />
         </div>
         <div className="mt-4 flex items-center justify-center gap-4">
-          {SpeechRecognitionCtor && (
+          {phase === 'idle' ? (
             <button
               type="button"
-              onClick={listen}
-              disabled={busy || listening}
-              aria-label={listening ? 'Listening' : 'Speak'}
-              className={`grid h-20 w-20 place-items-center rounded-full text-white shadow-lg disabled:opacity-60 ${listening ? 'animate-pulse bg-red' : 'bg-green-strong'}`}
+              onClick={() => startCall()}
+              className="flex h-14 items-center gap-2 rounded-full bg-green-strong px-6 text-[16px] font-semibold text-white shadow-lg"
             >
-              <Mic aria-hidden size={34} />
+              <Phone aria-hidden size={20} /> Call
             </button>
+          ) : (
+            SpeechRecognitionCtor && (
+              <button
+                type="button"
+                onClick={listen}
+                disabled={phase !== 'waiting' || listening}
+                aria-label={listening ? 'Listening' : 'Speak'}
+                className={`grid h-20 w-20 place-items-center rounded-full text-white shadow-lg disabled:opacity-60 ${listening ? 'animate-pulse bg-red' : 'bg-green-strong'}`}
+              >
+                <Mic aria-hidden size={34} />
+              </button>
+            )
           )}
-          {busy && (
+          {phase !== 'idle' && (
             <button type="button" onClick={hangUp} aria-label="Hang up" className="grid h-14 w-14 place-items-center rounded-full bg-red text-white">
               <Square aria-hidden size={22} />
             </button>
           )}
         </div>
+        {listening && <p className="mt-2 text-center text-[13px] text-tooltip-body">Listening… speak now</p>}
         <form onSubmit={submit} className="mt-4 flex gap-2">
           <label className="sr-only" htmlFor="voice-text">What the caller says</label>
           <input

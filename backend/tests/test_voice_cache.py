@@ -67,3 +67,54 @@ def test_model_is_configurable(monkeypatch):
     monkeypatch.setattr(voice.urllib.request, "urlopen", fake_urlopen)
     monkeypatch.setattr(config, "ELEVENLABS_MODEL", "eleven_flash_v2_5")
     assert voice.text_to_speech("Hi") == b"mp3" and sent["model_id"] == "eleven_flash_v2_5"
+
+
+class FakeResponse:
+    status = 200
+
+    def __init__(self, body=b"mp3-bytes"):
+        self.body = body
+
+    def read(self):
+        return self.body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def test_quota_refusal_is_logged_with_reason_and_pauses_requests(monkeypatch, caplog):
+    import io
+    import json
+    import urllib.error
+    calls = []
+    body = json.dumps({"detail": {"status": "quota_exceeded", "message": "You have 10 credits remaining"}}).encode()
+
+    def refuse(req, **kwargs):
+        calls.append(req.get_header("Xi-api-key"))
+        raise urllib.error.HTTPError(req.full_url, 401, "Unauthorized", {}, io.BytesIO(body))
+    monkeypatch.setattr(voice.urllib.request, "urlopen", refuse)
+    assert voice.text_to_speech("Hello") is None
+    assert "quota_exceeded: You have 10 credits remaining" in caplog.text
+    assert voice.text_to_speech("Hello again") is None
+    assert calls == ["test"]  # paused: the second line didn't hit ElevenLabs
+
+
+def test_audio_is_reused_from_disk_after_a_restart(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "AUDIO_DISK_CACHE_DIR", str(tmp_path))
+    calls = []
+    monkeypatch.setattr(voice.urllib.request, "urlopen", lambda req, **kw: calls.append(1) or FakeResponse())
+    assert voice.text_to_speech("Welcome") == b"mp3-bytes"
+    voice.clear_audio_cache()  # what a restart does to the memory cache
+    assert voice.text_to_speech("Welcome") == b"mp3-bytes"
+    assert calls == [1] and len(list(tmp_path.glob("*.mp3"))) == 1
+
+
+def test_startup_log_shows_key_length_not_key(monkeypatch, caplog):
+    import logging
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(config, "ELEVENLABS_API_KEY", "sk_secret_value_1234")
+    voice.log_tts_config()
+    assert "length 20" in caplog.text and "sk_secret" not in caplog.text

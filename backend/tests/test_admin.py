@@ -64,3 +64,10 @@ def test_sms_simulator(client, db, monkeypatch):
     res = client.post("/api/dev/sms", headers=ADMIN, json={"from": "+16045550101", "body": "4 beds"}).json
     assert res["changed"] and res["delta"] == 3 and "now shows 4 open beds" in res["reply"]
     assert open_beds(db) == 4
+
+
+def test_voice_intro_is_greeting_then_prompt(client, db):
+    lines = client.get("/api/dev/voice/intro", headers=ADMIN).json["lines"]
+    assert [l["kind"] for l in lines] == ["greeting", "prompt"]
+    assert "won't ask for your name" in lines[0]["text"] and "who needs a bed" in lines[1]["text"]
+    assert client.get("/api/dev/voice/intro").status_code == 403

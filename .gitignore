@@ -11,6 +11,7 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+backend/.audio_cache/
 
 # Node / build output
 node_modules/

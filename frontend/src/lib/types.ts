@@ -168,7 +168,7 @@ export interface AdminShelter extends Shelter {
 }
 
 export interface VoiceLine {
-  kind: 'greeting' | 'filler' | 'answer'
+  kind: 'greeting' | 'prompt' | 'filler' | 'answer'
   text: string
   /** /audio/<id>.mp3, or null when Twilio's own voice (<Say>) would speak it */
   audio_url: string | null

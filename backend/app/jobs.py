@@ -7,7 +7,7 @@ import logging
 
 from . import config
 from .availability import change_beds
-from .comms.voice import prewarm_fixed_phrases
+from .comms.voice import log_tts_config, prewarm_fixed_phrases
 from .db import transaction
 from .sockets import emit_shelter_update, socketio
 
@@ -53,6 +53,7 @@ def nudge_stale_shelters() -> None:
 def _prewarm_voice() -> None:
     """Generate the fixed voice-line phrases once at startup; calls fall back to <Say> if this fails."""
     try:
+        log_tts_config()
         prewarm_fixed_phrases()
     except Exception:  # never block startup on text-to-speech
         log.exception("voice prewarm failed; calls will use <Say> until audio is generated")

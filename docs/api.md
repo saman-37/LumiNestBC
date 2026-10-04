@@ -195,6 +195,7 @@ minute in total (`429 rate_limited`). Production keeps it on for the demo, behin
 | `POST /api/admin/reset-demo` | | Same as `scripts/reset_demo.py`. `{ "status": "reset", "shelters": 36, "holds_cancelled": 0, "lines": [...] }` |
 | `POST /api/admin/expire-holds` | | Expires every active hold now. `{ "status": "expired", "expired": 2 }` |
 | `POST /api/admin/shelters/<id>/stale` | | Sets `last_updated_at` to 4 hours ago. `{ "status": "stale", "shelter": <Shelter> }` |
+| `GET /api/dev/voice/intro` | | What a caller hears before speaking: `{ "lines": [<greeting>, <prompt>] }` (same line shape as below) |
 | `POST /api/dev/voice` | `{"transcript": "Any women's beds near Surrey?"}` | Runs the real call pipeline (see below) |
 | `POST /api/dev/sms` | `{"from": "+16045550101", "body": "3 beds open"}` | Same handler as `/twilio/sms`, no signature check. `{ "reply", "changed", "delta", "shelter" }` |
 

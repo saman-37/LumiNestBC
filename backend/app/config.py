@@ -31,9 +31,9 @@ TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
-ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "")
-ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_flash_v2_5")  # low latency for phone calls
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
+ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "").strip()
+ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_flash_v2_5").strip()  # low latency for phone calls
 
 # Base URL written onto NFC tags and staff-portal links (generate_tag_links.py, tag rotation).
 TAG_BASE_URL = os.getenv("TAG_BASE_URL", "https://luminestbc.tech").rstrip("/")
@@ -56,6 +56,12 @@ STAFF_EVENTS_LIMIT = 30
 
 # --- Voice audio cache -------------------------------------------------------------
 AUDIO_CACHE_TTL_SECONDS = 30 * 60  # dynamic answers; fixed phrases are kept forever
+# Generated MP3s are also kept on disk (keyed by voice + model + text), so a restart doesn't pay
+# ElevenLabs again for the same sentences. Empty = memory only. Git-ignored.
+AUDIO_DISK_CACHE_DIR = os.getenv("AUDIO_DISK_CACHE_DIR", str(REPO_ROOT / "backend" / ".audio_cache"))
+# After ElevenLabs refuses (quota used up, bad key, missing permission), stop asking for this long
+# and use the fallback voice instead of failing on every line.
+TTS_PAUSE_AFTER_REFUSAL_SECONDS = 10 * 60
 
 # --- Holds -----------------------------------------------------------------------
 HOLD_MINUTES = 60

@@ -40,7 +40,9 @@ def no_paid_apis(monkeypatch):
 
     monkeypatch.setattr(config, "ELEVENLABS_API_KEY", "")
     monkeypatch.setattr(config, "GEMINI_API_KEY", "")
+    monkeypatch.setattr(config, "AUDIO_DISK_CACHE_DIR", "")  # tests never touch the real disk cache
     voice.clear_audio_cache()
+    voice.resume_tts()
 
 
 @pytest.fixture(scope="session")

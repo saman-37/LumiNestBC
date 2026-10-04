@@ -93,8 +93,15 @@ def make_stale(shelter_id):
 
 
 def _spoken(kind: str, text: str) -> dict:
-    audio_id = audio_id_for(text, fixed=kind in ("greeting", "filler"))
+    audio_id = audio_id_for(text, fixed=kind in ("greeting", "prompt", "filler"))
     return {"kind": kind, "text": text, "audio_url": twilio_routes.audio_path(audio_id) if audio_id else None}
+
+
+@bp.get("/api/dev/voice/intro")
+@require_admin
+def voice_intro():
+    """What a caller hears before speaking: greeting + prompt (fixed phrases, cached audio)."""
+    return {"lines": [_spoken("greeting", say("greeting")), _spoken("prompt", say("prompt"))]}
 
 
 @bp.post("/api/dev/voice")
