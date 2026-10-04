@@ -34,7 +34,8 @@ def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 
 
 @lru_cache(maxsize=1)
-def _area_index() -> list[tuple[str, float, float]]:
+def _area_index() -> list[tuple[str, str, float, float]]:
+    """(lowercase name or alias, canonical area name, lat, lng)."""
     try:
         areas = json.loads(AREA_CENTRES_PATH.read_text())["areas"]
     except FileNotFoundError:
@@ -42,20 +43,26 @@ def _area_index() -> list[tuple[str, float, float]]:
     index = []
     for area in areas:
         for name in [area["name"], *area.get("aliases", [])]:
-            index.append((name.lower(), area["lat"], area["lng"]))
+            index.append((name.lower(), area["name"], area["lat"], area["lng"]))
     # Longest names first so "Surrey Whalley" wins over "Surrey".
     return sorted(index, key=lambda item: -len(item[0]))
 
 
-def resolve_area(area_text: str | None) -> tuple[float, float] | None:
-    """Map free text like "near Metrotown" to (lat, lng) using data/area_centres.json."""
+def find_area(area_text: str | None) -> tuple[str, float, float] | None:
+    """Map free text like "near Metrotown" to (area name, lat, lng) using data/area_centres.json."""
     if not area_text:
         return None
     text = area_text.lower()
-    for name, lat, lng in _area_index():
-        if name in text:
-            return lat, lng
+    for key, name, lat, lng in _area_index():
+        if key in text:
+            return name, lat, lng
     return None
+
+
+def resolve_area(area_text: str | None) -> tuple[float, float] | None:
+    """Map free text like "near Metrotown" to (lat, lng)."""
+    area = find_area(area_text)
+    return (area[1], area[2]) if area else None
 
 
 def passes_hard_filters(req: dict, shelter: dict) -> bool:
