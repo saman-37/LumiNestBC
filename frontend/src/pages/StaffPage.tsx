@@ -13,7 +13,7 @@ import { api, ApiError, staffApi, type StaffAuth } from '../lib/api'
 import { bedsWord } from '../lib/filters'
 import { captureStaffKeyFromUrl, forgetStaffKey, getAdminKey, getStaffKey } from '../lib/keys'
 import { useShelterUpdates } from '../lib/socket'
-import type { Shelter, StaffChange, StaffDetail, TagAction } from '../lib/types'
+import type { Hold, Shelter, StaffChange, StaffDetail, TagAction } from '../lib/types'
 
 // The private staff portal. Access is the link from the coordinator:
 // /staff/<shelter>#key=<key>. The key moves into localStorage and leaves the address bar.
@@ -126,6 +126,22 @@ export default function StaffPage() {
     }
   }
 
+  /** Same as tapping the Arrival tag: confirms the hold; the bed was already taken by it. */
+  async function arrive(hold: Hold) {
+    setBusy(true)
+    try {
+      const res = await api.arriveHold(hold.id)
+      setDetail((d) => (d ? { ...d, shelter: res.shelter } : d))
+      toast(`${hold.worker_name} (${hold.worker_org}) arrived`, 'success')
+      scheduleRefresh(300)
+    } catch (e) {
+      toast(ERRORS[e instanceof ApiError ? e.code : 'network_error'] ?? "Couldn't confirm the arrival.", 'error')
+      scheduleRefresh(300)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function rotate(action: TagAction) {
     if (!auth) return null
     setBusy(true)
@@ -181,6 +197,7 @@ export default function StaffPage() {
         <HoldsList
           holds={detail.holds}
           busy={busy}
+          onArrive={arrive}
           onRelease={(h) => run(() => staffApi.releaseHold(shelterId, auth, h.id), () => `Released ${h.worker_name}'s hold`, false)}
         />
         <ActivityList

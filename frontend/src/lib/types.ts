@@ -57,6 +57,8 @@ export interface AvailabilityEvent {
   reverts_event_id: number | null
   /** tap/text/staff change from the last hour that hasn't been reverted */
   revertable: boolean
+  /** whose hold a hold / arrival / expiry / release event was (staff portal only) */
+  hold: { id: string; worker_name: string; worker_org: string } | null
 }
 
 export interface TapResponse {

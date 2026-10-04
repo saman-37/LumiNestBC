@@ -39,6 +39,7 @@ export function SearchNear({ label, locating, onSearch, onLocate, onFocus, onVoi
               onFocus?.()
             }}
             onBlur={() => text !== label && text.trim() && onSearch(text)}
+            placeholder="Address, intersection or area"
             enterKeyHint="search"
             autoComplete="off"
             className="h-11 w-full text-ellipsis rounded-[12px] border border-border bg-surface-2 pl-[30px] pr-1.5 text-[16px] text-text placeholder:text-text-muted focus:border-blue focus:outline-none"

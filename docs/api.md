@@ -81,8 +81,11 @@ Recent events, newest first (`limit` is 1 to 100): `{ "events": [ <Event>, ... ]
 
 ```json
 { "id": 4182, "time": "2026-10-03T23:22:20+00:00", "delta": -1, "open_beds_after": 0,
-  "source": "tap", "reverted": false, "reverts_event_id": null, "revertable": true }
+  "source": "hold", "reverted": false, "reverts_event_id": null, "revertable": false,
+  "hold": { "id": "6ae26ff4-…", "worker_name": "Ana", "worker_org": "Downtown Outreach" } }
 ```
+`hold` names whose hold a hold, arrival, expiry or release event was (`null` for other events).
+Events are only returned with the staff key, like the holds list.
 `source` is one of `tap`, `sms`, `staff`, `hold`, `arrival`, `expiry` or `undo`. `revertable`
 is true for a `tap`/`sms`/`staff` change from the last 60 minutes with a non-zero delta that
 hasn't been reverted and isn't itself a revert. A revert has `reverts_event_id` set.

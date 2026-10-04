@@ -19,7 +19,7 @@ import { api, ApiError } from '../lib/api'
 import { DEFAULT_AREA, findArea } from '../lib/areas'
 import { useMediaQuery, useViewportHeight, vibrate } from '../lib/device'
 import { hasBeds, isOpen, matchesFilters } from '../lib/filters'
-import { getLocation, haversineKm, type LatLng } from '../lib/geo'
+import { geocodeAddress, getLocation, haversineKm, type LatLng } from '../lib/geo'
 import { useShelterStore } from '../lib/shelterStore'
 import type { FilterKey, Shelter } from '../lib/types'
 import { loadWorker, saveWorker, type Worker } from '../lib/worker'
@@ -130,14 +130,19 @@ export default function MapPage() {
   }, [sheetPx, desktop])
 
   // ---- search / locate ----
-  function search(text: string) {
-    const area = findArea(text)
-    if (!area) {
-      toast(`Couldn't find "${text.trim()}". Try an area like Metrotown or Whalley.`, 'error')
+  // Known areas answer instantly; anything else (a street address, intersection or place) is geocoded.
+  async function search(text: string) {
+    // A house number means a real address ("10666 City Parkway, Surrey"): look it up first rather
+    // than snapping to the area its city name matches.
+    const looksLikeAddress = /\d/.test(text)
+    const area = looksLikeAddress ? null : findArea(text)
+    const place = area ?? (await geocodeAddress(text)) ?? (looksLikeAddress ? findArea(text) : null)
+    if (!place) {
+      toast(`Couldn't find "${text.trim()}". Try a street address, intersection or area like Metrotown.`, 'error')
       return
     }
-    setOrigin(area)
-    setOriginLabel(area.name)
+    setOrigin({ lat: place.lat, lng: place.lng })
+    setOriginLabel('label' in place ? place.label : place.name)
     setOriginKey((k) => k + 1)
   }
 
@@ -145,11 +150,16 @@ export default function MapPage() {
     setLocating(true)
     const here = await getLocation()
     setLocating(false)
-    if (!here) {
-      toast('Location unavailable. Showing Main St & Hastings.', 'error')
+    if (!here.ok) {
+      const why = {
+        insecure: 'Location only works on a secure (https) page.',
+        denied: 'Location permission is off for this site.',
+        unavailable: "Couldn't get your location.",
+      }[here.reason]
+      toast(`${why} Type an address or area instead.`, 'error')
       return
     }
-    setOrigin(here)
+    setOrigin(here.at)
     setOriginLabel('My location')
     setOriginKey((k) => k + 1)
   }

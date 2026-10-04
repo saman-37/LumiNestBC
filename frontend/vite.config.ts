@@ -42,22 +42,12 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       // In dev, leave VITE_API_URL empty: the browser talks to Vite and Vite forwards to Flask.
       // That way a phone on the same Wi-Fi only needs the frontend URL.
-      // The app uses long-polling in dev (see lib/socket.ts): Werkzeug's dev server closes every
-      // WebSocket with an error, which Vite logged as endless "ws proxy error: EPIPE". ws stays on
-      // so a WebSocket client still works; dropped sockets during a backend reload are expected,
-      // so the proxy doesn't log them.
+      // Socket.IO is long-polling only in dev (see lib/socket.ts). WebSocket upgrades are not proxied:
+      // Werkzeug (Flask's dev server) breaks them, which flooded the log with "ws proxy error: EPIPE".
+      // A client still trying to upgrade (e.g. an old tab) just stays on polling. Production uses WebSocket.
       proxy: {
         '/api': { target: backend, changeOrigin: true },
-        '/socket.io': {
-          target: backend,
-          ws: true,
-          changeOrigin: true,
-          configure: (proxy) => {
-            proxy.on('error', (err: Error & { code?: string }) => {
-              if (!['EPIPE', 'ECONNRESET', 'ECONNREFUSED'].includes(err.code ?? '')) console.error('[proxy]', err.message)
-            })
-          },
-        },
+        '/socket.io': { target: backend, ws: false, changeOrigin: true },
         '/audio': { target: backend, changeOrigin: true }, // voice-line MP3s (admin voice simulator)
       },
     },

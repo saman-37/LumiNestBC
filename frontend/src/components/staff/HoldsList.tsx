@@ -5,7 +5,15 @@ import type { Hold } from '../../lib/types'
 import { ConfirmRow, Section } from './Section'
 
 /** Incoming holds. Staff can release one if the person never arrived. */
-export function HoldsList({ holds, busy, onRelease }: { holds: Hold[]; busy: boolean; onRelease: (hold: Hold) => void }) {
+interface Props {
+  holds: Hold[]
+  busy: boolean
+  onArrive: (hold: Hold) => void
+  onRelease: (hold: Hold) => void
+}
+
+/** Incoming holds. Staff confirm an arrival here (same as the Arrival tag) or release a no-show. */
+export function HoldsList({ holds, busy, onArrive, onRelease }: Props) {
   const now = useNow(1000)
   const [confirming, setConfirming] = useState<string | null>(null)
 
@@ -47,14 +55,24 @@ export function HoldsList({ holds, busy, onRelease }: { holds: Hold[]; busy: boo
                     }}
                   />
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirming(h.id)}
-                    disabled={busy}
-                    className="mt-2 min-h-11 w-full rounded-[12px] border border-blue-tint-border bg-surface text-[15px] font-semibold text-blue-light disabled:opacity-50"
-                  >
-                    Release (didn't arrive)
-                  </button>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onArrive(h)}
+                      disabled={busy}
+                      className="min-h-11 rounded-[12px] bg-green-strong px-2 text-[15px] font-semibold text-white disabled:opacity-50"
+                    >
+                      Mark arrived
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(h.id)}
+                      disabled={busy}
+                      className="min-h-11 rounded-[12px] border border-blue-tint-border bg-surface px-2 text-[15px] font-semibold text-blue-light disabled:opacity-50"
+                    >
+                      Didn't arrive
+                    </button>
+                  </div>
                 )}
               </motion.li>
             ))}

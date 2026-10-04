@@ -90,7 +90,7 @@ export default function HoldPage() {
   const steps: { label: string; detail?: string; state: StepState }[] = [
     { label: 'Hold placed', detail: formatClock(hold.created_at), state: 'done' },
     { label: 'Travelling to shelter', state: arrived ? 'done' : 'current' },
-    { label: 'Tap the Arrival tag at the door', detail: arrived ? 'Arrival confirmed' : undefined, state: arrived ? 'done' : 'upcoming' },
+    { label: 'Shelter confirms arrival', detail: arrived ? 'Confirmed by shelter staff' : 'Staff confirm it when you get there', state: arrived ? 'done' : 'upcoming' },
   ]
 
   return (
@@ -138,7 +138,7 @@ export default function HoldPage() {
         {arrived && (
           <>
             <p className="mt-4 font-display text-[20px] font-bold">Arrival confirmed</p>
-            <p className="mt-1 text-[15px] text-text-3">The shelter tapped the Arrival tag. Welcome in.</p>
+            <p className="mt-1 text-[15px] text-text-3">Shelter staff confirmed the arrival. Welcome in.</p>
           </>
         )}
         {(status === 'expired' || status === 'cancelled') && (

@@ -71,20 +71,22 @@ def lock_shelter(conn, shelter_id: str) -> dict | None:
 
 
 def change_beds(conn, shelter_id: str, *, source: str, delta: int = 0, set_to: int | None = None,
-                staff_update: bool = False) -> tuple[dict, int]:
+                staff_update: bool = False, hold_id=None) -> tuple[dict, int]:
     """Apply a bed change inside the caller's transaction.
 
     staff_update=True refreshes last_updated_at (freshness reflects staff confirmations,
     not holds or expiries). Returns (updated shelter row, delta actually applied).
     """
     updated, applied, _ = change_beds_logged(conn, shelter_id, source=source, delta=delta,
-                                             set_to=set_to, staff_update=staff_update)
+                                             set_to=set_to, staff_update=staff_update, hold_id=hold_id)
     return updated, applied
 
 
 def change_beds_logged(conn, shelter_id: str, *, source: str, delta: int = 0, set_to: int | None = None,
-                       staff_update: bool = False, reverts_event_id: int | None = None) -> tuple[dict, int, int]:
-    """change_beds(), also returning the availability_events id it logged."""
+                       staff_update: bool = False, reverts_event_id: int | None = None,
+                       hold_id=None) -> tuple[dict, int, int]:
+    """change_beds(), also returning the availability_events id it logged. hold_id links a
+    hold / arrival / expiry / release event to its hold (so staff see whose bed it was)."""
     row = lock_shelter(conn, shelter_id)
     if row is None:
         raise ShelterNotFound(shelter_id)
@@ -103,9 +105,9 @@ def change_beds_logged(conn, shelter_id: str, *, source: str, delta: int = 0, se
         {"n": new_count, "full": new_count == 0, "staff": staff_update, "id": shelter_id, "source": source},
     ).fetchone()
     event = conn.execute(
-        "INSERT INTO availability_events (time, shelter_id, delta, open_beds_after, source, reverts_event_id)"
-        " VALUES (now(), %s, %s, %s, %s, %s) RETURNING id",
-        (shelter_id, applied, new_count, source, reverts_event_id),
+        "INSERT INTO availability_events (time, shelter_id, delta, open_beds_after, source, reverts_event_id, hold_id)"
+        " VALUES (now(), %s, %s, %s, %s, %s, %s) RETURNING id",
+        (shelter_id, applied, new_count, source, reverts_event_id, hold_id),
     ).fetchone()
     return updated, applied, event["id"]
 
@@ -115,5 +117,5 @@ def mark_arrived(conn, hold_id) -> tuple[dict, dict]:
     hold = conn.execute(
         "UPDATE holds SET status = 'arrived' WHERE id = %s RETURNING *", (hold_id,)
     ).fetchone()
-    shelter, _ = change_beds(conn, hold["shelter_id"], source="arrival", staff_update=True)
+    shelter, _ = change_beds(conn, hold["shelter_id"], source="arrival", staff_update=True, hold_id=hold_id)
     return hold, shelter

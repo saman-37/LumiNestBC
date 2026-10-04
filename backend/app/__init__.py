@@ -1,4 +1,5 @@
 import gzip
+import re
 
 from flask import Flask, request, send_from_directory
 from flask_cors import CORS
@@ -8,7 +9,22 @@ from .db import init_pool
 from .sockets import socketio
 
 
-def create_app(database_url: str | None = None) -> Flask:
+# Phones on the same Wi-Fi open the dev app at http://<laptop LAN IP>:5173.
+_LAN_ORIGIN = re.compile(
+    r"^http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+"
+    r"|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$"
+)
+
+
+def socket_origins(allow_lan: bool):
+    """Origins allowed to open Socket.IO. allow_lan (dev server only) also accepts private-network
+    addresses, so a phone on the same Wi-Fi gets live updates. Production uses FRONTEND_ORIGIN only."""
+    if not allow_lan:
+        return config.FRONTEND_ORIGINS
+    return lambda origin: origin in config.FRONTEND_ORIGINS or bool(_LAN_ORIGIN.match(origin or ""))
+
+
+def create_app(database_url: str | None = None, allow_lan_origins: bool = False) -> Flask:
     app = Flask(__name__)
     CORS(app, resources={r"/api/*": {"origins": config.FRONTEND_ORIGINS}})
     init_pool(database_url or config.DATABASE_URL, config.DB_POOL_MAX_SIZE)
@@ -62,6 +78,6 @@ def create_app(database_url: str | None = None) -> Flask:
             "message": "Run `npm run build` in the frontend/ directory first.",
         }, 404
 
-    socketio.init_app(app, cors_allowed_origins=config.FRONTEND_ORIGINS, async_mode="threading")
+    socketio.init_app(app, cors_allowed_origins=socket_origins(allow_lan_origins), async_mode="threading")
     return app
 
