@@ -14,8 +14,10 @@ services:
         value: 3.11.9
       - key: DATABASE_URL
         sync: false
+      # Comma-separated, no trailing slashes: the Vercel URL, plus the custom domain once it's live,
+      # e.g. https://luminestbc.vercel.app,https://luminestbc.tech,https://www.luminestbc.tech
       - key: FRONTEND_ORIGIN
-        value: https://luminestbc.tech,https://www.luminestbc.tech
+        sync: false
       - key: BACKEND_PUBLIC_URL
         sync: false
       - key: SMS_NUDGE_ENABLED

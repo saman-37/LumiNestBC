@@ -165,9 +165,10 @@ DATABASE_URL='postgres://...' python scripts/generate_tag_links.py   # https://l
 job live in that process.
 
 **Frontend (Vercel).** Import the repo with **Root Directory** set to `frontend` (framework: Vite).
-Set `VITE_API_URL` to the Render URL and optionally `VITE_CARTO_KEY`. `vercel.json` rewrites
-every path to `index.html`, so `/t/...` tag links work on refresh. Add the domain
-`luminestbc.tech` and make sure `FRONTEND_ORIGIN` on Render lists it.
+Set `VITE_API_URL` to the Render URL (no trailing slash) and optionally `VITE_GOOGLE_MAPS_KEY` and `VITE_CARTO_KEY`.
+These are baked in at build time, so redeploy after changing them. `vercel.json` rewrites
+every path to `index.html`, so `/t/...` tag links work on refresh. Then set `FRONTEND_ORIGIN` on Render to the
+Vercel URL (and `https://luminestbc.tech,https://www.luminestbc.tech` once the domain is added).
 
 ## Repo map
 
