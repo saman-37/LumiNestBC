@@ -10,7 +10,7 @@ from . import config
 _PUBLIC_FIELDS = (
     "id", "name", "address", "lat", "lng", "capacity", "open_beds", "is_full",
     "women_only", "youth", "families", "pets_ok", "accessible", "couples",
-    "is_dv", "dv_phone", "staff_phone",
+    "is_dv", "dv_phone", "staff_phone", "accepting", "last_update_source",
 )
 
 
@@ -77,6 +77,14 @@ def change_beds(conn, shelter_id: str, *, source: str, delta: int = 0, set_to: i
     staff_update=True refreshes last_updated_at (freshness reflects staff confirmations,
     not holds or expiries). Returns (updated shelter row, delta actually applied).
     """
+    updated, applied, _ = change_beds_logged(conn, shelter_id, source=source, delta=delta,
+                                             set_to=set_to, staff_update=staff_update)
+    return updated, applied
+
+
+def change_beds_logged(conn, shelter_id: str, *, source: str, delta: int = 0, set_to: int | None = None,
+                       staff_update: bool = False, reverts_event_id: int | None = None) -> tuple[dict, int, int]:
+    """change_beds(), also returning the availability_events id it logged."""
     row = lock_shelter(conn, shelter_id)
     if row is None:
         raise ShelterNotFound(shelter_id)
@@ -87,18 +95,19 @@ def change_beds(conn, shelter_id: str, *, source: str, delta: int = 0, set_to: i
         UPDATE shelters
            SET open_beds = %(n)s,
                is_full = %(full)s,
+               last_update_source = %(source)s,
                last_updated_at = CASE WHEN %(staff)s THEN now() ELSE last_updated_at END
          WHERE id = %(id)s
      RETURNING *
         """,
-        {"n": new_count, "full": new_count == 0, "staff": staff_update, "id": shelter_id},
+        {"n": new_count, "full": new_count == 0, "staff": staff_update, "id": shelter_id, "source": source},
     ).fetchone()
-    conn.execute(
-        "INSERT INTO availability_events (time, shelter_id, delta, open_beds_after, source)"
-        " VALUES (now(), %s, %s, %s, %s)",
-        (shelter_id, applied, new_count, source),
-    )
-    return updated, applied
+    event = conn.execute(
+        "INSERT INTO availability_events (time, shelter_id, delta, open_beds_after, source, reverts_event_id)"
+        " VALUES (now(), %s, %s, %s, %s, %s) RETURNING id",
+        (shelter_id, applied, new_count, source, reverts_event_id),
+    ).fetchone()
+    return updated, applied, event["id"]
 
 
 def mark_arrived(conn, hold_id) -> tuple[dict, dict]:

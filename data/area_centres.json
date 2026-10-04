@@ -4,7 +4,7 @@
     { "name": "Vancouver Downtown Eastside", "aliases": ["downtown eastside", "dtes", "main and hastings", "oppenheimer park"], "lat": 49.2810, "lng": -123.0990 },
     { "name": "Vancouver Downtown", "aliases": ["downtown vancouver", "granville", "waterfront"], "lat": 49.2827, "lng": -123.1207 },
     { "name": "Mount Pleasant", "aliases": ["main street", "broadway and main"], "lat": 49.2630, "lng": -123.1000 },
-    { "name": "Surrey Whalley", "aliases": ["whalley", "surrey central", "king george"], "lat": 49.1906, "lng": -122.8490 },
+    { "name": "Surrey Whalley", "aliases": ["whalley", "surrey central", "king george", "surrey"], "lat": 49.1906, "lng": -122.8490 },
     { "name": "Surrey Newton", "aliases": ["newton"], "lat": 49.1328, "lng": -122.8466 },
     { "name": "Burnaby Metrotown", "aliases": ["metrotown", "burnaby"], "lat": 49.2276, "lng": -123.0076 },
     { "name": "New Westminster", "aliases": ["new west", "columbia street"], "lat": 49.2057, "lng": -122.9110 },

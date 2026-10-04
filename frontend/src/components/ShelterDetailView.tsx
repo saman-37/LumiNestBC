@@ -2,7 +2,7 @@ import { ArrowRight, Copy, Navigation, Phone } from 'lucide-react'
 import { useAnimate } from 'motion/react'
 import { useEffect } from 'react'
 import { bedsWord, shelterState } from '../lib/filters'
-import { formatKm, formatWalk } from '../lib/format'
+import { formatKm, formatWalk, sourceLabel } from '../lib/format'
 import type { Shelter } from '../lib/types'
 import { AnimatedNumber } from './AnimatedNumber'
 import { Button, LinkButton } from './Button'
@@ -14,7 +14,6 @@ import { useToast } from './Toast'
 interface Props {
   shelter: Shelter
   km: number | null
-  source: string | null
   holding: boolean
   /** Increments on a 409 just_taken to replay the shake. */
   shakeKey: number
@@ -29,13 +28,13 @@ export function directionsUrl(s: Shelter): string | null {
   return null
 }
 
-export function ShelterDetailView({ shelter, km, source, holding, shakeKey, nextBest, onHold, onSelect }: Props) {
+export function ShelterDetailView({ shelter, km, holding, shakeKey, nextBest, onHold, onSelect }: Props) {
   const toast = useToast()
   const [scope, animate] = useAnimate()
   const state = shelterState(shelter)
   const open = state === 'open' || state === 'open-one'
   const beds = state === 'full' ? 0 : shelter.open_beds
-  const canHold = shelter.open_beds > 0 && !shelter.is_full // stale counts can still be held
+  const canHold = shelter.open_beds > 0 && !shelter.is_full && shelter.accepting // stale counts can still be held
   const directions = directionsUrl(shelter)
 
   useEffect(() => {
@@ -89,7 +88,7 @@ export function ShelterDetailView({ shelter, km, source, holding, shakeKey, next
         </div>
         <FreshnessPill freshness={shelter.freshness} />
         <div className="w-full">
-          <FreshnessLine shelter={shelter} source={source} />
+          <FreshnessLine shelter={shelter} source={sourceLabel(shelter.last_update_source)} />
         </div>
       </div>
 
@@ -99,7 +98,7 @@ export function ShelterDetailView({ shelter, km, source, holding, shakeKey, next
 
       <div className="mt-5 grid gap-2.5">
         <Button disabled={!canHold || holding} onClick={() => onHold(shelter)}>
-          {holding ? 'Holding…' : canHold ? 'Hold a bed for 60 min' : 'Full tonight'}
+          {holding ? 'Holding…' : canHold ? 'Hold a bed for 60 min' : shelter.accepting ? 'Full tonight' : 'Not accepting tonight'}
         </Button>
         <div className="grid grid-cols-2 gap-2.5">
           {shelter.staff_phone ? (

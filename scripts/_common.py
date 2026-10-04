@@ -4,6 +4,7 @@ Run scripts from the repo root with the backend venv active:
     source backend/.venv/bin/activate && python scripts/<name>.py
 """
 import os
+import sys
 from pathlib import Path
 
 import psycopg
@@ -12,6 +13,8 @@ from psycopg.rows import dict_row
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
+# Scripts share some logic with the backend (demo reset, staff-key hashing).
+sys.path.insert(0, str(ROOT / "backend"))
 
 TAG_ACTIONS = ("freed", "filled", "full", "arrive")
 

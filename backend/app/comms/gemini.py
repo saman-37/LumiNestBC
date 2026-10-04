@@ -4,6 +4,7 @@ import re
 import urllib.request
 
 from .. import config
+from .http import ssl_context
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def _heuristic_voice_extract(transcript: str) -> dict:
         res["family"] = True
     if re.search(r"\b(pet|dog|cat|animal|puppy|kitten)\b", t):
         res["has_pet"] = True
-    if re.search(r"\b(wheelchair|accessible|handicap|disabled|mobility)\b", t):
+    if re.search(r"\b(wheelchair|accessible|handicap|disabled|mobility|walker|cane|crutch|crutches)\b", t):
         res["needs_accessible"] = True
     if re.search(r"\b(couple|partner|wife|husband|together)\b", t):
         res["is_couple"] = True
@@ -119,7 +120,7 @@ def extract_voice_request(transcript: str) -> dict:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=3.5) as resp:
+        with urllib.request.urlopen(req, timeout=3.5, context=ssl_context()) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             text = data["candidates"][0]["content"]["parts"][0]["text"]
             parsed = json.loads(text)
@@ -160,7 +161,7 @@ def parse_staff_text(text: str) -> dict:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=3.5) as resp:
+        with urllib.request.urlopen(req, timeout=3.5, context=ssl_context()) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             parsed_text = data["candidates"][0]["content"]["parts"][0]["text"]
             parsed = json.loads(parsed_text)

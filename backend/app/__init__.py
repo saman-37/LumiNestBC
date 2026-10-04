@@ -16,9 +16,11 @@ def create_app(database_url: str | None = None) -> Flask:
     from .routes.holds import bp as holds_bp
     from .routes.shelters import bp as shelters_bp
     from .routes.tags import bp as tags_bp
+    from .routes.admin import bp as admin_bp
+    from .routes.staff import bp as staff_bp
     from .routes.tier3 import bp as tier3_bp
 
-    for bp in (shelters_bp, tags_bp, holds_bp, tier3_bp, comms_bp):
+    for bp in (shelters_bp, tags_bp, holds_bp, staff_bp, admin_bp, tier3_bp, comms_bp):
         app.register_blueprint(bp)
 
     @app.get("/health")
