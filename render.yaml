@@ -23,9 +23,11 @@ services:
       - key: SMS_NUDGE_ENABLED
         value: "false"
       - key: DEV_TOOLS_ENABLED
-        value: "true"  # no /admin or simulators in production
+        value: "true"  # /admin and the voice/SMS simulators, locked behind ADMIN_KEY
+      - key: ADMIN_KEY
+        sync: false
       - key: TAG_BASE_URL
-        value: hhttps://lumi-nest-bc.vercel.app
+        value: https://lumi-nest-bc.vercel.app
       - key: ELEVENLABS_MODEL
         value: eleven_flash_v2_5
       - key: TWILIO_ACCOUNT_SID
