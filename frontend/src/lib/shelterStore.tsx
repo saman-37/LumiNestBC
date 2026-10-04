@@ -1,13 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { api } from './api'
-import { useShelterUpdates } from './socket'
+import { useShelterUpdates, useSocketConnected } from './socket'
 import type { Shelter } from './types'
 
 const REFRESH_MS = 60_000 // also refreshes "updated X min ago"
 const BUMP_MS = 1_200
 
-/** All shelters, kept live via Socket.IO. `bumped` holds ids whose count just changed. */
-export function useShelters() {
+interface ShelterStore {
+  shelters: Shelter[]
+  loading: boolean
+  error: string | null
+  /** ids whose count just changed (drives the pin pop / number animations) */
+  bumped: Set<string>
+  connected: boolean
+  upsert: (shelter: Shelter) => void
+}
+
+const Ctx = createContext<ShelterStore | null>(null)
+
+/** One live copy of every shelter for the whole app (REST load + Socket.IO updates). */
+export function ShelterProvider({ children }: { children: ReactNode }) {
   const [shelters, setShelters] = useState<Shelter[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +45,9 @@ export function useShelters() {
     return () => clearInterval(timer)
   }, [load])
 
-  useShelterUpdates((updated) => {
+  const connected = useSocketConnected(load)
+
+  const upsert = useCallback((updated: Shelter) => {
     const changed = counts.current.get(updated.id) !== updated.open_beds
     counts.current.set(updated.id, updated.open_beds)
     setShelters((prev) => {
@@ -52,7 +66,17 @@ export function useShelters() {
         return next
       })
     }, BUMP_MS)
-  })
+  }, [])
 
-  return { shelters, loading, error, bumped }
+  useShelterUpdates(upsert)
+
+  return (
+    <Ctx.Provider value={{ shelters, loading, error, bumped, connected, upsert }}>{children}</Ctx.Provider>
+  )
+}
+
+export function useShelterStore(): ShelterStore {
+  const store = useContext(Ctx)
+  if (!store) throw new Error('useShelterStore must be used inside <ShelterProvider>')
+  return store
 }

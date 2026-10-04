@@ -1,12 +1,7 @@
-import { useEffect, useState } from 'react'
-
 export interface LatLng {
   lat: number
   lng: number
 }
-
-/** Vancouver Downtown Eastside: used when the phone won't share its location. */
-export const DEFAULT_CENTRE: LatLng = { lat: 49.281, lng: -123.099 }
 
 export function haversineKm(a: LatLng, b: LatLng): number {
   const rad = (d: number) => (d * Math.PI) / 180
@@ -16,20 +11,14 @@ export function haversineKm(a: LatLng, b: LatLng): number {
   return 2 * 6371 * Math.asin(Math.sqrt(h))
 }
 
-export function formatKm(km: number): string {
-  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`
-}
-
-/** The phone's location once, or null (denied, unavailable, or not https). */
-export function useMyLocation(): LatLng | null {
-  const [location, setLocation] = useState<LatLng | null>(null)
-  useEffect(() => {
-    if (!('geolocation' in navigator)) return
+/** The phone's location, or null if denied/unavailable/not https. */
+export function getLocation(): Promise<LatLng | null> {
+  return new Promise((resolve) => {
+    if (!('geolocation' in navigator)) return resolve(null)
     navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {},
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
     )
-  }, [])
-  return location
+  })
 }
