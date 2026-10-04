@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenBed (LumiNestBC) — Automated 2-Minute Demo Video</title>
+  <title>LuminestBC — Automated 2-Minute Demo Video</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -60,10 +60,10 @@
   <header class="w-full flex items-center justify-between border-b border-zinc-800 pb-4 z-20">
     <div class="flex items-center gap-3">
       <div class="h-9 w-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
-        OB
+        L
       </div>
       <div>
-        <h1 class="text-xs uppercase tracking-widest font-bold text-emerald-400">OpenBed · Automated Demo Reel</h1>
+        <h1 class="text-xs uppercase tracking-widest font-bold text-emerald-400">LuminestBC · Automated Demo Reel</h1>
         <p class="text-[11px] text-zinc-400">2-Minute Devpost & Hackathon Video Player</p>
       </div>
     </div>
@@ -327,7 +327,7 @@
         </div>
 
         <div class="text-xs text-zinc-500 font-mono">
-          Thank you from the OpenBed / LumiNestBC Team.
+          Thank you from the LuminestBC Team.
         </div>
       </div>
 
@@ -347,7 +347,7 @@
       {
         id: "scene-1",
         duration: 24,
-        text: "It's 11 PM on East Hastings. Rain is falling. An outreach worker is standing with someone who needs a warm bed tonight. The official BC211 public shelter list updates only twice a day on weekdays. At night and over weekends, it is completely frozen. Outreach workers spend 45 minutes making blind phone calls to full shelters while someone shivers outside. This is OpenBed: a live shelter-bed network for Metro Vancouver. A bed tonight, found in 60 seconds, not 60 phone calls."
+        text: "It's 11 PM on East Hastings. Rain is falling. An outreach worker is standing with someone who needs a warm bed tonight. The official BC211 public shelter list updates only twice a day on weekdays. At night and over weekends, it is completely frozen. Outreach workers spend 45 minutes making blind phone calls to full shelters while someone shivers outside. This is LuminestBC: a live shelter-bed network for Metro Vancouver. A bed tonight, found in 60 seconds, not 60 phone calls."
       },
       {
         id: "scene-2",
@@ -367,7 +367,7 @@
       {
         id: "scene-5",
         duration: 16,
-        text: "Built with Tiger Data TimescaleDB, Gemini 2.5 Flash, ElevenLabs voice synthesis, and React. With OpenBed, no one is left out in the cold while an open bed sits empty. Thank you."
+        text: "Built with Tiger Data TimescaleDB, Gemini 2.5 Flash, ElevenLabs voice synthesis, and React. With LuminestBC, no one is left out in the cold while an open bed sits empty. Thank you."
       }
     ];
 
@@ -478,7 +478,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'openbed_demo_recording.webm';
+          a.download = 'luminestbc_demo_recording.webm';
           a.click();
           stream.getTracks().forEach(t => t.stop());
         };

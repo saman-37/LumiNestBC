@@ -3,26 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenBed (LumiNestBC) — Hackathon Presentation</title>
+  <title>LuminestBC — Presentation</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
     
     :root {
-      --bg: #090e10;
-      --card: #131b1e;
-      --card-border: #1f2d32;
-      --green: #19b37e;
-      --green-glow: rgba(25, 179, 126, 0.25);
-      --amber: #f2b33d;
-      --red: #e5544b;
-      --blue: #2f7df6;
+      --bg: #f3f7f6;
+      --card: #ffffff;
+      --card-border: #dde7e5;
+      --text-main: #182527;
+      --text-muted: #536769;
+      --green: #0b7f57;
+      --green-light: #10b981;
+      --green-tint: #e4f6ee;
+      --amber: #b45309;
+      --amber-tint: #fef3c7;
+      --red: #dc2626;
+      --red-tint: #fee2e2;
+      --blue: #1d4ed8;
+      --blue-tint: #dbeafe;
     }
 
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       background-color: var(--bg);
-      color: #e6edeb;
+      color: var(--text-main);
       user-select: none;
       overflow: hidden;
     }
@@ -34,7 +40,7 @@
     .slide {
       display: none;
       opacity: 0;
-      transform: translateY(12px) scale(0.99);
+      transform: translateY(10px) scale(0.99);
       transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -44,471 +50,452 @@
       transform: translateY(0) scale(1);
     }
 
-    .glass-card {
-      background: rgba(19, 27, 30, 0.85);
-      backdrop-filter: blur(12px);
+    .light-card {
+      background: #ffffff;
       border: 1px solid var(--card-border);
+      box-shadow: 0 10px 30px rgba(18, 38, 34, 0.05), 0 2px 6px rgba(18, 38, 34, 0.03);
+    }
+
+    .wordmark-bc {
+      color: #0b7f57;
     }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col justify-between p-6 md:p-10 relative">
 
   <!-- Top Navigation & Progress Bar -->
-  <header class="w-full flex items-center justify-between z-30 pb-4">
+  <header class="w-full flex items-center justify-between z-30 pb-4 border-b border-zinc-200">
     <div class="flex items-center gap-3">
-      <div class="h-8 w-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
-        OB
+      <div class="h-9 w-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 font-bold text-sm">
+        L
       </div>
       <div>
-        <h1 class="text-xs uppercase tracking-widest font-bold text-emerald-400">OpenBed · LumiNestBC</h1>
-        <p class="text-[11px] text-zinc-400">StormHacks 2026</p>
+        <h1 class="text-sm font-bold text-zinc-900 tracking-tight">
+          Luminest<span class="text-emerald-700">BC</span>
+        </h1>
+        <p class="text-[11px] text-zinc-500 font-medium">Find the lights still on.</p>
       </div>
     </div>
 
     <!-- Progress indicator -->
     <div class="flex items-center gap-4">
-      <div class="hidden sm:flex items-center gap-1.5 text-xs text-zinc-400">
+      <div class="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500 font-medium">
         <span>Slide</span>
-        <span id="current-slide" class="text-white font-mono font-bold">01</span>
+        <span id="current-slide" class="text-zinc-900 font-mono font-bold">01</span>
         <span>/</span>
-        <span id="total-slides" class="text-zinc-500 font-mono">10</span>
+        <span id="total-slides" class="text-zinc-400 font-mono">08</span>
       </div>
       
-      <button id="notes-btn" class="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800/60 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <button id="notes-btn" class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition flex items-center gap-1.5 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
         <span>Notes [N]</span>
       </button>
 
-      <button id="fullscreen-btn" class="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800/60 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition">
+      <button id="fullscreen-btn" class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition shadow-sm">
         Full [F]
       </button>
     </div>
   </header>
 
   <!-- Top Progress Bar -->
-  <div class="absolute top-0 left-0 right-0 h-1 bg-zinc-800 z-50">
-    <div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 10%;"></div>
+  <div class="absolute top-0 left-0 right-0 h-1 bg-zinc-200 z-50">
+    <div id="progress-bar" class="h-full bg-emerald-600 transition-all duration-300" style="width: 12.5%;"></div>
   </div>
 
   <!-- Slides Container -->
-  <main class="flex-1 w-full max-w-6xl mx-auto flex items-center justify-center relative z-20 my-auto overflow-hidden">
+  <main class="flex-1 w-full max-w-5xl mx-auto flex items-center justify-center relative z-20 my-auto overflow-hidden">
 
-    <!-- Slide 1: Cover -->
-    <section class="slide active flex-col items-center text-center max-w-3xl">
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wide uppercase mb-6">
-        <span>⚡ StormHacks 2026 Project</span>
+    <!-- Slide 1: Problem Statement Initially -->
+    <section class="slide active flex-col max-w-4xl w-full">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold uppercase tracking-wider mb-3 w-fit">
+        <span>The Problem · 11:00 PM on East Hastings</span>
       </div>
-      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
-        OpenBed <span class="text-emerald-400 font-normal">/ LumiNestBC</span>
-      </h1>
-      <p class="text-xl sm:text-2xl text-zinc-300 font-medium mt-4">
-        A bed tonight, found in <span class="text-emerald-400 underline decoration-emerald-500/50 underline-offset-4">60 seconds</span>, not 60 phone calls.
-      </p>
-      <p class="text-sm text-zinc-400 max-w-xl mt-4 leading-relaxed">
-        A live shelter-bed network for Metro Vancouver. Shelters update counts with a 2-second NFC tap, and outreach workers find, match, and hold open beds by voice in real time.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-2 justify-center text-xs text-zinc-400">
-        <span class="px-3 py-1 rounded-md bg-zinc-800/80 border border-zinc-700 font-mono">Tiger Data (TimescaleDB)</span>
-        <span class="px-3 py-1 rounded-md bg-zinc-800/80 border border-zinc-700 font-mono">Gemini 2.5 Flash</span>
-        <span class="px-3 py-1 rounded-md bg-zinc-800/80 border border-zinc-700 font-mono">ElevenLabs Voice</span>
-        <span class="px-3 py-1 rounded-md bg-zinc-800/80 border border-zinc-700 font-mono">Physical NFC Tags</span>
-      </div>
-    </section>
 
-    <!-- Slide 2: The Problem -->
-    <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-2">The Real-World Crisis</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">11:00 PM on East Hastings. Rain is falling.</h2>
-      
-      <div class="grid md:grid-cols-2 gap-5 w-full">
-        <div class="glass-card p-6 rounded-2xl border-l-4 border-l-rose-500">
-          <h3 class="text-base font-bold text-rose-300 mb-2">The Stale Data Trap</h3>
-          <p class="text-sm text-zinc-300 leading-relaxed">
-            BC211's public shelter list updates only <strong>twice a day on weekdays</strong>. Overnight and throughout weekends, the list is completely frozen.
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight leading-snug">
+        Someone is shivering in the cold.<br/>
+        <span class="text-rose-600 font-bold">And the public shelter list is completely frozen.</span>
+      </h2>
+
+      <div class="grid md:grid-cols-2 gap-5 w-full mt-6">
+        <div class="light-card p-6 rounded-2xl border-l-4 border-l-rose-500">
+          <div class="text-xs font-bold uppercase tracking-wider text-rose-700 mb-1">Stale Data Trap</div>
+          <p class="text-sm text-zinc-700 leading-relaxed font-medium">
+            BC211's public shelter list updates only <strong>twice a day on weekdays</strong>. Over weekends and nights, it is completely frozen.
           </p>
-          <div class="mt-4 p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 text-xs font-mono text-zinc-400">
+          <div class="mt-4 p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-mono text-zinc-600">
             Last updated: Friday 7:30 PM<br/>
             Current time: Saturday 11:15 PM<br/>
-            <span class="text-rose-400">Data staleness: 27+ hours old</span>
+            <span class="text-rose-600 font-bold">Staleness: 27+ hours out of date</span>
           </div>
         </div>
 
-        <div class="glass-card p-6 rounded-2xl border-l-4 border-l-amber-500">
-          <h3 class="text-base font-bold text-amber-300 mb-2">The Blind Phone-Call Cycle</h3>
-          <p class="text-sm text-zinc-300 leading-relaxed">
-            Outreach workers spend <strong>45 to 60 minutes</strong> calling shelter after shelter while the person they are helping waits in the freezing cold.
+        <div class="light-card p-6 rounded-2xl border-l-4 border-l-amber-500">
+          <div class="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">Blind Phone Calls</div>
+          <p class="text-sm text-zinc-700 leading-relaxed font-medium">
+            Outreach workers spend <strong>45 to 60 minutes</strong> calling shelter after shelter while someone waits in the freezing rain.
           </p>
-          <p class="text-xs text-zinc-400 mt-3">
-            Meanwhile, shelter staff at the front desk are fielding repetitive phone calls all night on top of managing high-stress front-line intake.
-          </p>
-        </div>
-      </div>
-
-      <div class="mt-6 text-center text-sm font-semibold text-zinc-300 bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
-        💡 <span class="text-white">The tragedy:</span> Beds open up at 10:30 PM, but people sleep outside because nobody knows they are free.
-      </div>
-    </section>
-
-    <!-- Slide 3: Why Past Apps Failed -->
-    <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">Root Cause Analysis</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Why Did Multi-Million Dollar Apps Fail?</h2>
-      <p class="text-sm text-zinc-400 mb-6">In 2023, the Los Angeles City Controller audited their citywide shelter tracking app. The result: completely inaccurate data and zero adoption.</p>
-
-      <div class="grid md:grid-cols-3 gap-4 w-full">
-        <div class="glass-card p-5 rounded-xl border-t-2 border-t-rose-500">
-          <div class="text-2xl mb-2">⌨️</div>
-          <h3 class="text-sm font-bold text-white mb-1">High Data Entry Friction</h3>
-          <p class="text-xs text-zinc-400 leading-relaxed">
-            Shelter workers don't have time to log into software, remember 12-character passwords, and fill out forms while checking someone in at 2 AM.
-          </p>
-        </div>
-
-        <div class="glass-card p-5 rounded-xl border-t-2 border-t-amber-500">
-          <div class="text-2xl mb-2">⏱️</div>
-          <h3 class="text-sm font-bold text-white mb-1">No Data Freshness</h3>
-          <p class="text-xs text-zinc-400 leading-relaxed">
-            A pin showing "2 beds open" without an age is useless. If a worker walks 20 minutes to find the bed taken hours ago, trust in the app is broken forever.
-          </p>
-        </div>
-
-        <div class="glass-card p-5 rounded-xl border-t-2 border-t-blue-500">
-          <div class="text-2xl mb-2">🏃</div>
-          <h3 class="text-sm font-bold text-white mb-1">No Hold Mechanism</h3>
-          <p class="text-xs text-zinc-400 leading-relaxed">
-            Knowing a bed exists doesn't help if another worker takes it while you're traveling. Without a hold, every search is a race.
+          <p class="text-xs text-zinc-500 mt-3 leading-relaxed">
+            Meanwhile, shelter staff field repetitive phone calls all night on top of front-line crisis intake.
           </p>
         </div>
       </div>
 
-      <div class="mt-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium text-center">
-        🎯 <strong>OpenBed's Core Insight:</strong> The problem was never the map UI. The bottleneck was data entry speed.
+      <div class="mt-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Introducing</span>
+          <h3 class="text-lg font-bold text-zinc-900">
+            Luminest<span class="text-emerald-700">BC</span>: <span class="font-medium text-emerald-800">Find the lights still on.</span>
+          </h3>
+        </div>
+        <span class="text-xs font-semibold text-emerald-800 bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shrink-0">
+          A bed tonight in 60s, not 60 calls
+        </span>
       </div>
     </section>
 
-    <!-- Slide 4: The 3 Connected Solutions -->
+    <!-- Slide 2: The Solution (3 Pillars) -->
     <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">The Architecture of Speed</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Three Connected Systems</h2>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2 w-fit">
+        <span>The Solution</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight mb-2">Three Connected Pillars</h2>
+      <p class="text-sm text-zinc-600 mb-6">Designed to eliminate data-entry friction and instantly connect people to real beds.</p>
 
       <div class="grid md:grid-cols-3 gap-5 w-full">
         <!-- Pillar 1 -->
-        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-emerald-400">
+        <div class="light-card p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-emerald-600">
           <div>
-            <span class="text-xs font-mono font-bold text-emerald-400">01 / FRONT DESK</span>
-            <h3 class="text-lg font-bold text-white mt-1 mb-2">Tap to Update</h3>
-            <p class="text-xs text-zinc-300 leading-relaxed">
-              Physical NFC stickers on the desk. Tap phone: +1, −1, or Full. No login, no typing, no app install. Done in 2 seconds.
+            <span class="text-xs font-mono font-bold text-emerald-700">01 / FRONT DESK</span>
+            <h3 class="text-lg font-bold text-zinc-900 mt-1 mb-2">Tap to Update</h3>
+            <p class="text-xs text-zinc-600 leading-relaxed font-medium">
+              Physical NFC stickers beside the register. Tap phone: +1, −1, or Full. No login, no app install. Takes 2 seconds.
             </p>
           </div>
-          <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-emerald-400/90 font-mono">
-            ⚡ 10s Instant Undo
+          <div class="mt-4 pt-3 border-t border-zinc-100 text-[11px] text-emerald-700 font-mono font-semibold">
+            ⚡ 10-Second Undo
           </div>
         </div>
 
         <!-- Pillar 2 -->
-        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-blue-400">
+        <div class="light-card p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-blue-600">
           <div>
-            <span class="text-xs font-mono font-bold text-blue-400">02 / OUTREACH</span>
-            <h3 class="text-lg font-bold text-white mt-1 mb-2">Voice Match & Hold</h3>
-            <p class="text-xs text-zinc-300 leading-relaxed">
-              Press mic or call hotline. Gemini structures criteria. Real code ranks beds. ElevenLabs reads the match. Hold bed for 60 minutes.
+            <span class="text-xs font-mono font-bold text-blue-700">02 / OUTREACH</span>
+            <h3 class="text-lg font-bold text-zinc-900 mt-1 mb-2">Voice Match & Hold</h3>
+            <p class="text-xs text-zinc-600 leading-relaxed font-medium">
+              Press mic or call hotline. Gemini structures criteria. Real code ranks beds. ElevenLabs reads the answer. Hold bed for 60 min.
             </p>
           </div>
-          <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-blue-400/90 font-mono">
+          <div class="mt-4 pt-3 border-t border-zinc-100 text-[11px] text-blue-700 font-mono font-semibold">
             🔒 Row-Locked Hold
           </div>
         </div>
 
         <!-- Pillar 3 -->
-        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-purple-400">
+        <div class="light-card p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-purple-600">
           <div>
-            <span class="text-xs font-mono font-bold text-purple-400">03 / REAL-TIME</span>
-            <h3 class="text-lg font-bold text-white mt-1 mb-2">Trust The Data</h3>
-            <p class="text-xs text-zinc-300 leading-relaxed">
-              Color-coded freshness clocks on every pin. TimescaleDB logs every event. Sub-second WebSocket pushes keep every screen live.
+            <span class="text-xs font-mono font-bold text-purple-700">03 / TRUST</span>
+            <h3 class="text-lg font-bold text-zinc-900 mt-1 mb-2">Trust The Data</h3>
+            <p class="text-xs text-zinc-600 leading-relaxed font-medium">
+              Color-coded freshness clocks on every pin. Tiger Data TimescaleDB logs every change. Sub-second WebSocket sync.
             </p>
           </div>
-          <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-purple-400/90 font-mono">
-            ⏱️ &lt; 300ms Sync
+          <div class="mt-4 pt-3 border-t border-zinc-100 text-[11px] text-purple-700 font-mono font-semibold">
+            ⏱️ &lt; 300ms Broadcast
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Slide 5: Deep Dive: Flow A (NFC Tap Board) -->
+    <!-- Slide 3: Flow A (NFC Tap Board) -->
     <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Front Desk Experience</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Flow A: The 2-Second NFC Tap Board</h2>
-      
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2 w-fit">
+        <span>Flow A · Front Desk</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight mb-4">The 2-Second NFC Tap Board</h2>
+
       <div class="grid md:grid-cols-2 gap-6 items-center">
         <div>
-          <p class="text-sm text-zinc-300 mb-4 leading-relaxed">
-            We put inexpensive NFC tags beside the shelter front desk register:
+          <p class="text-sm text-zinc-700 mb-4 leading-relaxed font-medium">
+            Inexpensive physical NFC tags right beside the shelter front desk:
           </p>
-          <ul class="space-y-2.5 text-xs text-zinc-300">
-            <li class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
-              <span><strong>Bed Freed (+1):</strong> Guest leaves. One tap adds a bed.</span>
+          <ul class="space-y-2.5 text-xs text-zinc-700">
+            <li class="flex items-center gap-2.5">
+              <span class="w-3 h-3 rounded-full bg-emerald-600 shrink-0"></span>
+              <span><strong>Bed Freed (+1):</strong> Guest checks out. One tap adds a bed.</span>
             </li>
-            <li class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+            <li class="flex items-center gap-2.5">
+              <span class="w-3 h-3 rounded-full bg-rose-600 shrink-0"></span>
               <span><strong>Bed Filled (−1):</strong> Guest arrives. One tap claims a bed.</span>
             </li>
-            <li class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-zinc-600 shrink-0"></span>
-              <span><strong>Full (0):</strong> Sets beds to zero instantly.</span>
+            <li class="flex items-center gap-2.5">
+              <span class="w-3 h-3 rounded-full bg-zinc-800 shrink-0"></span>
+              <span><strong>Full (0):</strong> Marks shelter full immediately.</span>
             </li>
-            <li class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-blue-500 shrink-0"></span>
-              <span><strong>Door Arrival Tag:</strong> Confirms active 60-min hold on arrival.</span>
+            <li class="flex items-center gap-2.5">
+              <span class="w-3 h-3 rounded-full bg-blue-600 shrink-0"></span>
+              <span><strong>Arrival Tag:</strong> Confirms active 60-min hold at the door.</span>
             </li>
           </ul>
 
-          <div class="mt-5 p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
-            🛡️ <strong>Real-World Engineering:</strong> Tokenized tap IDs prevent double-taps on poor connectivity. 10-second instant undo banner fixes accidental touches.
+          <div class="mt-5 p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900">
+            🛡️ <strong>Fail-Safe Engineering:</strong> Tokenized tap IDs ensure cell signal retries never double-count. A 10-second instant undo banner lets staff reverse mistaps with 1 tap.
           </div>
         </div>
 
-        <!-- Interactive Mockup Card -->
-        <div class="glass-card p-6 rounded-2xl flex flex-col items-center text-center">
-          <div class="text-xs font-mono text-zinc-400 mb-1">FRONT DESK NFC PAD</div>
-          <div class="text-3xl font-extrabold text-white font-mono my-2 text-emerald-400" id="demo-bed-count">14 BEDS OPEN</div>
-          <div class="text-xs text-zinc-400 mb-5">Yukon Shelter · Vancouver</div>
+        <!-- Interactive Simulation Card -->
+        <div class="light-card p-6 rounded-2xl flex flex-col items-center text-center">
+          <div class="text-xs font-mono text-zinc-500 font-bold uppercase">YUKON SHELTER · FRONT DESK</div>
+          <div class="text-4xl font-extrabold text-emerald-700 font-mono my-3" id="demo-bed-count">
+            14 BEDS OPEN
+          </div>
+          <p class="text-xs text-zinc-500 mb-5">Click below to simulate a real NFC phone tap:</p>
 
-          <div class="grid grid-cols-2 gap-2.5 w-full">
-            <button onclick="simulateTap(1)" class="p-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition">
+          <div class="grid grid-cols-2 gap-3 w-full">
+            <button onclick="simulateTap(1)" class="p-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-sm active:scale-95">
               +1 Bed Freed
             </button>
-            <button onclick="simulateTap(-1)" class="p-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-bold text-xs transition">
+            <button onclick="simulateTap(-1)" class="p-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-900 text-white font-bold text-xs transition shadow-sm active:scale-95">
               −1 Bed Filled
             </button>
           </div>
-          <p class="text-[10px] text-zinc-500 mt-3 font-mono">Try clicking to simulate live NFC tap</p>
+          <p class="text-[11px] text-zinc-400 mt-3 font-mono">Updates all connected devices in &lt; 300ms</p>
         </div>
       </div>
     </section>
 
-    <!-- Slide 6: Flow B (The Live Map & Freshness) -->
+    <!-- Slide 4: Flow B (Live Freshness Map) -->
     <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-2">Outreach Worker Map</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Flow B: Honest Freshness, Live Map</h2>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-800 text-xs font-bold uppercase tracking-wider mb-2 w-fit">
+        <span>Flow B · Outreach Map</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight mb-4">Honest Freshness on Every Pin</h2>
 
-      <div class="grid md:grid-cols-3 gap-4 mb-6">
-        <div class="glass-card p-4 rounded-xl border-l-4 border-l-emerald-500">
-          <div class="flex items-center gap-2">
+      <div class="grid md:grid-cols-3 gap-4 mb-5">
+        <div class="light-card p-4 rounded-xl border-l-4 border-l-emerald-600">
+          <div class="flex items-center gap-2 mb-1">
             <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-sm font-bold text-white">Green (&lt; 60 min)</span>
+            <span class="text-sm font-bold text-zinc-900">Green (&lt; 60 min)</span>
           </div>
-          <p class="text-xs text-zinc-400 mt-1">Staff confirmed recently. High confidence to dispatch.</p>
+          <p class="text-xs text-zinc-600">Staff verified recently. Confident to dispatch immediately.</p>
         </div>
 
-        <div class="glass-card p-4 rounded-xl border-l-4 border-l-amber-500">
-          <div class="flex items-center gap-2">
+        <div class="light-card p-4 rounded-xl border-l-4 border-l-amber-500">
+          <div class="flex items-center gap-2 mb-1">
             <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-            <span class="text-sm font-bold text-white">Amber (1–3 hours)</span>
+            <span class="text-sm font-bold text-zinc-900">Amber (1–3 hours)</span>
           </div>
-          <p class="text-xs text-zinc-400 mt-1">Getting stale. Tap-to-call button prominently suggested.</p>
+          <p class="text-xs text-zinc-600">Getting stale. Tap-to-call button prominently highlighted.</p>
         </div>
 
-        <div class="glass-card p-4 rounded-xl border-l-4 border-l-rose-500">
-          <div class="flex items-center gap-2">
+        <div class="light-card p-4 rounded-xl border-l-4 border-l-rose-500">
+          <div class="flex items-center gap-2 mb-1">
             <span class="w-3 h-3 rounded-full bg-rose-500"></span>
-            <span class="text-sm font-bold text-white">Red (&gt; 3 hours)</span>
+            <span class="text-sm font-bold text-zinc-900">Red (&gt; 3 hours)</span>
           </div>
-          <p class="text-xs text-zinc-400 mt-1">Unconfirmed. Clearly flagged so workers avoid dead-ends.</p>
+          <p class="text-xs text-zinc-600">Unconfirmed. Clearly flagged so workers avoid dead-ends.</p>
         </div>
       </div>
 
-      <div class="glass-card p-5 rounded-2xl">
+      <div class="light-card p-5 rounded-2xl">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <span class="text-sm font-bold text-white">Granular Demographic & Access Filters:</span>
-          <div class="flex flex-wrap gap-1.5 text-[11px]">
-            <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Women Only</span>
-            <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Youth (&lt;24)</span>
-            <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Pets Allowed</span>
-            <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Wheelchair Accessible</span>
-            <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Couples</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-zinc-700">1-Tap Accessibility & Needs Filters:</span>
+          <div class="flex flex-wrap gap-1.5 text-xs">
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">Women Only</span>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">Youth (&lt;24)</span>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">Pets Allowed</span>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">Wheelchair Access</span>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">Couples</span>
           </div>
         </div>
-        <p class="text-xs text-zinc-400">
-          Filters operate client-side in sub-milliseconds on top of the live MapLibre GL layer with pin clustering across Metro Vancouver.
+        <p class="text-xs text-zinc-500 mt-1">
+          Dynamic MapLibre GL layer with intelligent pin clustering across all 67 Metro Vancouver shelters.
         </p>
       </div>
     </section>
 
-    <!-- Slide 7: Flow C (Voice Match & 60-Min Hold) -->
+    <!-- Slide 5: Flow C (Voice Match & 60-Min Hold) -->
     <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-purple-400 mb-2">Voice & AI Architecture</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Flow C: Voice Match & 60-Minute Holds</h2>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 border border-purple-200 text-purple-800 text-xs font-bold uppercase tracking-wider mb-2 w-fit">
+        <span>Flow C · Voice & AI</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight mb-4">Voice Match & 60-Minute Holds</h2>
 
-      <div class="glass-card p-5 rounded-2xl mb-4 border border-purple-500/30">
-        <div class="text-xs font-mono text-purple-300 mb-1">VOICE INPUT (IN-APP MIC OR TWILIO PHONE LINE):</div>
-        <p class="text-base font-semibold text-white italic">
+      <div class="light-card p-5 rounded-2xl mb-4 border border-purple-200">
+        <div class="text-[11px] font-mono text-purple-700 font-bold uppercase mb-1">NATURAL VOICE INPUT:</div>
+        <p class="text-base font-semibold text-zinc-900 italic">
           "Woman with a small dog near Main and Hastings, uses a walker"
         </p>
         
-        <div class="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-800">
-          <span class="text-xs text-zinc-400">Extracted Reasoning Trace:</span>
-          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-semibold">Accessible ✓</span>
-          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-semibold">Pets OK ✓</span>
-          <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-xs font-semibold">3 min walk</span>
-          <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 text-xs font-semibold">updated 2m ago</span>
+        <div class="mt-3 flex flex-wrap items-center gap-2 pt-2.5 border-t border-zinc-100">
+          <span class="text-xs text-zinc-500 font-medium">Extracted Reasoning Trace:</span>
+          <span class="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">Accessible ✓</span>
+          <span class="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">Pets OK ✓</span>
+          <span class="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-xs font-bold">3 min walk</span>
+          <span class="px-2.5 py-0.5 rounded-md bg-zinc-100 text-zinc-700 text-xs font-medium">updated just now</span>
         </div>
       </div>
 
       <div class="grid md:grid-cols-2 gap-4">
-        <div class="glass-card p-4 rounded-xl">
-          <h4 class="text-sm font-bold text-white mb-1">ElevenLabs Spoken Narration</h4>
-          <p class="text-xs text-zinc-400 leading-relaxed">
-            The top match is immediately read aloud via high-fidelity streaming audio so outreach workers on the street can listen hands-free.
+        <div class="light-card p-4 rounded-xl">
+          <h4 class="text-sm font-bold text-zinc-900 mb-1">ElevenLabs Spoken Narration</h4>
+          <p class="text-xs text-zinc-600 leading-relaxed font-medium">
+            Best match is read back through streaming audio so outreach workers can listen hands-free on noisy streets.
           </p>
         </div>
 
-        <div class="glass-card p-4 rounded-xl border border-emerald-500/40">
-          <h4 class="text-sm font-bold text-emerald-400 mb-1">Atomic 60-Min Bed Hold</h4>
-          <p class="text-xs text-zinc-300 leading-relaxed">
-            Clicking "Hold Bed" performs an atomic row lock (<code class="text-emerald-300 font-mono">SELECT FOR UPDATE</code>). Count drops by 1. Zero risk of double-booking.
+        <div class="light-card p-4 rounded-xl border border-emerald-300 bg-emerald-50/50">
+          <h4 class="text-sm font-bold text-emerald-900 mb-1">Atomic 60-Min Bed Hold</h4>
+          <p class="text-xs text-emerald-800 leading-relaxed font-medium">
+            Clicking "Hold Bed" initiates a row-level lock (<code class="font-mono bg-white px-1 rounded">SELECT FOR UPDATE</code>). Count drops by 1. Zero risk of double-booking.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- Slide 8: Technical Architecture & Tiger Data -->
+    <!-- Slide 6: Technical Architecture -->
     <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Under The Hood</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Technical Stack & Engineering Design</h2>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2 w-fit">
+        <span>Technical Architecture</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight mb-4">Under The Hood</h2>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="glass-card p-3 rounded-xl text-center">
-          <div class="text-xs font-bold text-zinc-400">DATABASE</div>
-          <div class="text-sm font-bold text-white mt-1">Tiger Data</div>
-          <div class="text-[11px] text-emerald-400 font-mono mt-0.5">TimescaleDB Cloud</div>
+        <div class="light-card p-3.5 rounded-xl text-center">
+          <div class="text-[11px] font-bold text-zinc-400 font-mono">DATABASE</div>
+          <div class="text-sm font-extrabold text-zinc-900 mt-1">Tiger Data</div>
+          <div class="text-[11px] text-emerald-700 font-mono mt-0.5 font-bold">TimescaleDB</div>
         </div>
-        <div class="glass-card p-3 rounded-xl text-center">
-          <div class="text-xs font-bold text-zinc-400">AI EXTRACTOR</div>
-          <div class="text-sm font-bold text-white mt-1">Gemini 2.5 Flash</div>
-          <div class="text-[11px] text-purple-400 font-mono mt-0.5">Structured JSON</div>
+        <div class="light-card p-3.5 rounded-xl text-center">
+          <div class="text-[11px] font-bold text-zinc-400 font-mono">AI EXTRACTOR</div>
+          <div class="text-sm font-extrabold text-zinc-900 mt-1">Gemini 2.5</div>
+          <div class="text-[11px] text-purple-700 font-mono mt-0.5 font-bold">Structured JSON</div>
         </div>
-        <div class="glass-card p-3 rounded-xl text-center">
-          <div class="text-xs font-bold text-zinc-400">AUDIO SYNTHESIS</div>
-          <div class="text-sm font-bold text-white mt-1">ElevenLabs</div>
-          <div class="text-[11px] text-blue-400 font-mono mt-0.5">Cached MP3 Audio</div>
+        <div class="light-card p-3.5 rounded-xl text-center">
+          <div class="text-[11px] font-bold text-zinc-400 font-mono">VOICE ENGINE</div>
+          <div class="text-sm font-extrabold text-zinc-900 mt-1">ElevenLabs</div>
+          <div class="text-[11px] text-blue-700 font-mono mt-0.5 font-bold">MP3 Audio Stream</div>
         </div>
-        <div class="glass-card p-3 rounded-xl text-center">
-          <div class="text-xs font-bold text-zinc-400">FRONTEND PWA</div>
-          <div class="text-sm font-bold text-white mt-1">React 19 + Vite</div>
-          <div class="text-[11px] text-emerald-400 font-mono mt-0.5">MapLibre + Socket.IO</div>
+        <div class="light-card p-3.5 rounded-xl text-center">
+          <div class="text-[11px] font-bold text-zinc-400 font-mono">FRONTEND PWA</div>
+          <div class="text-sm font-extrabold text-zinc-900 mt-1">React 19 + Vite</div>
+          <div class="text-[11px] text-emerald-700 font-mono mt-0.5 font-bold">MapLibre + Socket</div>
         </div>
       </div>
 
-      <!-- Core Rules -->
-      <div class="glass-card p-5 rounded-2xl">
-        <h4 class="text-sm font-bold text-white mb-2">Three Core Engineering Safeguards:</h4>
+      <div class="light-card p-5 rounded-2xl">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-700 mb-2">Three Core Engineering Safeguards:</h4>
         <div class="grid md:grid-cols-3 gap-3 text-xs">
           <div>
-            <span class="font-bold text-emerald-400">1. Zero Hallucinations:</span>
-            <p class="text-zinc-400 mt-1">Gemini only converts messy speech into criteria. Deterministic Python makes all shelter matching decisions.</p>
+            <span class="font-bold text-emerald-800">1. Zero Hallucinations:</span>
+            <p class="text-zinc-600 mt-1 font-medium">Gemini only parses speech into JSON. Deterministic Python makes all bed match decisions.</p>
           </div>
           <div>
-            <span class="font-bold text-blue-400">2. Privacy by Architecture:</span>
-            <p class="text-zinc-400 mt-1">Zero client names stored. DV shelter coordinates and addresses are mathematically stripped at the database boundary.</p>
+            <span class="font-bold text-blue-800">2. Privacy by Architecture:</span>
+            <p class="text-zinc-600 mt-1 font-medium">Zero client names stored. DV shelter coordinates and addresses are stripped at the database boundary.</p>
           </div>
           <div>
-            <span class="font-bold text-purple-400">3. Immutable Audit Log:</span>
-            <p class="text-zinc-400 mt-1">TimescaleDB hypertable logs every tap, hold, and release for regional capacity planning.</p>
+            <span class="font-bold text-purple-800">3. Immutable Audit Log:</span>
+            <p class="text-zinc-600 mt-1 font-medium">TimescaleDB hypertable logs every tap, hold, and release for regional capacity planning.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Slide 9: Real Data & Metro Vancouver Coverage -->
+    <!-- Slide 7: Real Metro Vancouver Traction -->
     <section class="slide flex-col max-w-4xl w-full">
-      <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Real Production Data</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">67 Real Shelters Across Metro Vancouver</h2>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2 w-fit">
+        <span>Real Production Data</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight mb-6">67 Real Shelters Across Metro Vancouver</h2>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="glass-card p-5 rounded-2xl text-center">
-          <div class="text-3xl font-extrabold text-white font-mono">67</div>
-          <div class="text-xs font-semibold text-zinc-400 mt-1">Mapped Facilities</div>
+        <div class="light-card p-5 rounded-2xl text-center">
+          <div class="text-3xl font-extrabold text-zinc-900 font-mono">67</div>
+          <div class="text-xs font-semibold text-zinc-500 mt-1">Mapped Facilities</div>
         </div>
-        <div class="glass-card p-5 rounded-2xl text-center">
-          <div class="text-3xl font-extrabold text-emerald-400 font-mono">1,850+</div>
-          <div class="text-xs font-semibold text-zinc-400 mt-1">Total Tracked Beds</div>
+        <div class="light-card p-5 rounded-2xl text-center">
+          <div class="text-3xl font-extrabold text-emerald-700 font-mono">1,850+</div>
+          <div class="text-xs font-semibold text-zinc-500 mt-1">Total Tracked Beds</div>
         </div>
-        <div class="glass-card p-5 rounded-2xl text-center">
-          <div class="text-3xl font-extrabold text-blue-400 font-mono">&lt;600ms</div>
-          <div class="text-xs font-semibold text-zinc-400 mt-1">Voice Match Latency</div>
+        <div class="light-card p-5 rounded-2xl text-center">
+          <div class="text-3xl font-extrabold text-blue-700 font-mono">&lt;600ms</div>
+          <div class="text-xs font-semibold text-zinc-500 mt-1">Voice Match Latency</div>
         </div>
-        <div class="glass-card p-5 rounded-2xl text-center">
-          <div class="text-3xl font-extrabold text-purple-400 font-mono">100%</div>
-          <div class="text-xs font-semibold text-zinc-400 mt-1">Geocoded & Verified</div>
+        <div class="light-card p-5 rounded-2xl text-center">
+          <div class="text-3xl font-extrabold text-purple-700 font-mono">100%</div>
+          <div class="text-xs font-semibold text-zinc-500 mt-1">Geocoded & Verified</div>
         </div>
       </div>
 
-      <div class="p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300">
+      <div class="p-4 rounded-xl bg-white border border-zinc-200 text-xs text-zinc-700 font-medium">
         📍 <strong>Regional Coverage:</strong> Vancouver (Downtown Eastside, Downtown, Kitsilano), Surrey (Whalley, City Centre), Burnaby (Metrotown), Richmond, New Westminster, and North Vancouver.
       </div>
     </section>
 
-    <!-- Slide 10: Conclusion & Call to Action -->
+    <!-- Slide 8: The Close -->
     <section class="slide flex-col items-center text-center max-w-3xl">
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wide uppercase mb-6">
-        <span>The Future of Shelter Networks</span>
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-6">
+        <span>StormHacks 2026</span>
       </div>
-      <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-4">
-        A bed tonight, found in 60 seconds.
+
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-zinc-900 mb-3 tracking-tight">
+        Luminest<span class="text-emerald-700">BC</span>
       </h2>
-      <p class="text-base text-zinc-300 max-w-xl mx-auto leading-relaxed mb-6">
-        No more 45-minute phone calls in the rain. OpenBed transforms cold, stale public lists into a live, trusted, responsive network.
+      <p class="text-xl sm:text-2xl text-emerald-800 font-semibold mb-6">
+        Find the lights still on.
       </p>
 
-      <div class="glass-card p-5 rounded-2xl max-w-lg w-full text-left mb-6 text-xs text-zinc-300 space-y-2">
+      <p class="text-sm text-zinc-600 max-w-lg mx-auto leading-relaxed mb-8 font-medium">
+        A bed tonight, found in <strong>60 seconds</strong>, not 60 phone calls.<br/>
+        No more 45-minute phone calls in the rain.
+      </p>
+
+      <div class="light-card p-5 rounded-2xl max-w-md w-full text-left text-xs text-zinc-700 space-y-2 mb-6">
         <div class="flex items-center justify-between">
-          <span>GitHub Repository:</span>
-          <span class="font-mono text-emerald-400">github.com/saman-37/LumiNestBC</span>
+          <span class="font-medium text-zinc-500">GitHub Repository:</span>
+          <span class="font-mono text-emerald-700 font-bold">github.com/saman-37/LumiNestBC</span>
         </div>
         <div class="flex items-center justify-between">
-          <span>Live Backend & SPA:</span>
-          <span class="font-mono text-blue-400">Port 8000 (Single-Port Serving)</span>
+          <span class="font-medium text-zinc-500">Database:</span>
+          <span class="font-mono text-zinc-900 font-bold">Tiger Data (TimescaleDB Cloud)</span>
         </div>
         <div class="flex items-center justify-between">
-          <span>Database Provider:</span>
-          <span class="font-mono text-purple-400">Tiger Data (TimescaleDB)</span>
+          <span class="font-medium text-zinc-500">Serving:</span>
+          <span class="font-mono text-zinc-900 font-bold">Flask + React SPA (Single-Port 8000)</span>
         </div>
       </div>
 
-      <p class="text-sm font-semibold text-zinc-400">Thank you! Questions?</p>
+      <p class="text-sm font-bold text-zinc-400">Thank you! Questions?</p>
     </section>
 
   </main>
 
   <!-- Bottom Navigation Bar -->
-  <footer class="w-full flex items-center justify-between z-30 pt-4 border-t border-zinc-900">
+  <footer class="w-full flex items-center justify-between z-30 pt-4 border-t border-zinc-200">
     <div class="flex items-center gap-2">
-      <button id="prev-btn" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white transition flex items-center gap-1">
+      <button id="prev-btn" class="px-4 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-800 transition shadow-sm flex items-center gap-1 active:scale-95">
         <span>←</span> <span>Prev</span>
       </button>
-      <button id="next-btn" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-zinc-950 transition flex items-center gap-1 shadow-lg shadow-emerald-500/20">
+      <button id="next-btn" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white transition shadow-sm flex items-center gap-1 active:scale-95">
         <span>Next</span> <span>→</span>
       </button>
     </div>
 
-    <!-- Quick Slide Selector Dots -->
+    <!-- Quick Slide Dots -->
     <div class="hidden md:flex items-center gap-1.5" id="dots-container"></div>
 
-    <div class="text-[11px] text-zinc-500 font-mono">
-      Use [<kbd class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">←</kbd> <kbd class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">→</kbd>] keys
+    <div class="text-[11px] text-zinc-400 font-mono">
+      Use [<kbd class="px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-800 font-bold">←</kbd> <kbd class="px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-800 font-bold">→</kbd>] keys
     </div>
   </footer>
 
   <!-- Speaker Notes Drawer (Toggled with N) -->
-  <div id="notes-drawer" class="hidden absolute bottom-20 right-8 max-w-md w-full glass-card p-5 rounded-2xl shadow-2xl z-40 border border-emerald-500/30 text-xs">
+  <div id="notes-drawer" class="hidden absolute bottom-20 right-8 max-w-md w-full light-card p-5 rounded-2xl shadow-2xl z-40 border border-emerald-300 text-xs">
     <div class="flex items-center justify-between mb-2">
-      <span class="font-bold text-emerald-400 uppercase tracking-wider text-[11px]">Speaker Talking Points</span>
-      <button id="close-notes" class="text-zinc-400 hover:text-white">✕</button>
+      <span class="font-bold text-emerald-800 uppercase tracking-wider text-[11px]">Speaker Talking Points</span>
+      <button id="close-notes" class="text-zinc-400 hover:text-zinc-800">✕</button>
     </div>
-    <div id="notes-content" class="text-zinc-300 leading-relaxed"></div>
+    <div id="notes-content" class="text-zinc-700 leading-relaxed font-medium"></div>
   </div>
 
   <script>
@@ -517,16 +504,14 @@
     let currentIndex = 0;
 
     const notes = [
-      "HOOK (30s): Introduce the problem immediately with the 60-second tagline. Mention that OpenBed is live with 67 real Metro Vancouver shelters on Tiger Data TimescaleDB.",
-      "THE PROBLEM (30s): Walk judges through the cold reality: BC211 only updates twice a day on weekdays. It's Friday night, someone is shivering, and workers are making 45 mins of blind calls.",
-      "PAST APPS (30s): Explain why LA's app failed: data entry friction. Overworked staff at 2 AM won't fill out forms. You have to remove all friction from the shelter desk.",
-      "SOLUTION (30s): High-level summary of the 3 connected parts: NFC tap for staff, voice match + hold for outreach, and live freshness on the map.",
-      "FLOW A: TAP BOARD (30s): Demonstrate or explain the physical NFC stickers. Guest leaves, tap once (+1). Mistap? 10-second instant undo. Idempotency guarantees.",
-      "FLOW B: FRESHNESS MAP (30s): Highlight the green, amber, red freshness halos. Workers know whether to trust the count before walking 20 minutes in the rain.",
-      "FLOW C: VOICE MATCH & HOLD (45s): Outreach worker speaks naturally. Gemini extracts criteria, plain code ranks, ElevenLabs synthesizes speech, and atomic hold prevents race conditions.",
-      "TECH STACK (30s): Highlight Tiger Data TimescaleDB hypertable for time-series availability logs, and why we let plain code decide instead of hallucinating LLMs.",
-      "REAL DATA (30s): Emphasize that we mapped 67 real facilities and 1,850+ beds across Vancouver, Surrey, and Burnaby. It's fully functional right now.",
-      "CLOSE (20s): Close with the tagline: A bed tonight, found in 60 seconds, not 60 phone calls. Open for questions!"
+      "THE PROBLEM (45s): Start immediately with the problem. It's 11 PM on East Hastings. A worker is with someone in the rain. BC211 updates only twice a day on weekdays and is frozen nights/weekends. Workers make 45 mins of blind calls while someone freezes. Introduce LuminestBC: Find the lights still on.",
+      "THE 3 PILLARS (30s): Walk judges through our 3 connected systems: 1) Tap to update via physical NFC, 2) Voice match and 60-min holds for outreach, 3) Trust the data with live freshness.",
+      "FLOW A: TAP BOARD (30s): Highlight the front desk experience. 2 seconds to update. Tap phone on NFC tag (+1 / -1 / Full). No login, no app install. 10s instant undo.",
+      "FLOW B: FRESHNESS MAP (30s): Explain the freshness halo system: green under 1 hour, amber 1-3 hours, red over 3 hours. Workers know whether to trust the count before walking 20 minutes in the rain.",
+      "FLOW C: VOICE MATCH & HOLD (45s): Outreach worker speaks naturally. Gemini structures the criteria without names. Plain code ranks real beds. ElevenLabs speaks back. Atomic 60-minute hold prevents double-booking the last bed.",
+      "TECH STACK (30s): Under the hood: Tiger Data TimescaleDB hypertable for time-series availability logs, and why plain code decides instead of hallucinating LLMs.",
+      "REAL DATA (30s): Emphasize that we mapped 67 real facilities and 1,850+ beds across Vancouver, Surrey, and Burnaby. It's live and functional right now.",
+      "CLOSE (20s): Close with the tagline: LuminestBC - Find the lights still on. A bed tonight, found in 60 seconds, not 60 phone calls. Open for questions!"
     ];
 
     const currentSlideEl = document.getElementById('current-slide');
@@ -542,10 +527,9 @@
 
     totalSlidesEl.textContent = String(totalSlides).padStart(2, '0');
 
-    // Create dots
     slides.forEach((_, i) => {
       const dot = document.createElement('button');
-      dot.className = `w-2 h-2 rounded-full transition-all ${i === 0 ? 'bg-emerald-400 w-5' : 'bg-zinc-700'}`;
+      dot.className = `w-2 h-2 rounded-full transition-all ${i === 0 ? 'bg-emerald-600 w-5' : 'bg-zinc-300'}`;
       dot.onclick = () => goToSlide(i);
       dotsContainer.appendChild(dot);
     });
@@ -553,7 +537,7 @@
     function updateDots() {
       const dots = dotsContainer.querySelectorAll('button');
       dots.forEach((dot, i) => {
-        dot.className = `w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-emerald-400 w-5' : 'bg-zinc-700'}`;
+        dot.className = `w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-emerald-600 w-5' : 'bg-zinc-300'}`;
       });
     }
 
@@ -572,7 +556,6 @@
     prevBtn.addEventListener('click', () => goToSlide(currentIndex - 1));
     nextBtn.addEventListener('click', () => goToSlide(currentIndex + 1));
 
-    // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         goToSlide(currentIndex + 1);
@@ -606,14 +589,13 @@
     closeNotes.addEventListener('click', () => notesDrawer.classList.add('hidden'));
     document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
 
-    // Interactive Demo tap
     let demoBeds = 14;
     window.simulateTap = function(delta) {
       demoBeds = Math.max(0, demoBeds + delta);
       const el = document.getElementById('demo-bed-count');
       if (el) {
         el.textContent = `${demoBeds} BEDS OPEN`;
-        el.style.transform = 'scale(1.1)';
+        el.style.transform = 'scale(1.08)';
         setTimeout(() => el.style.transform = 'scale(1)', 150);
       }
     }

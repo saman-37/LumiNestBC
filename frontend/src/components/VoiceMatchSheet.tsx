@@ -560,7 +560,7 @@ export function VoiceMatchSheet({ open, onClose, coords, onHoldShelter, onSelect
             {/* Footer */}
             <div className="border-t border-border bg-surface-2/60 px-5 py-3 text-center">
               <p className="text-[12px] text-text-muted">
-                Powered by Gemini & ElevenLabs · OpenBed Live Network
+                Powered by Gemini & ElevenLabs · LuminestBC Live Network
               </p>
             </div>
           </motion.div>
