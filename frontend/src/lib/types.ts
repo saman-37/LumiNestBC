@@ -71,3 +71,40 @@ export interface HoldWithShelter {
   hold: Hold
   shelter: Shelter
 }
+
+export interface VoiceCriteria {
+  gender: string | null
+  age_group: string | null
+  family: boolean | null
+  has_pet: boolean | null
+  needs_accessible: boolean | null
+  is_couple: boolean | null
+  area_text: string | null
+  language: string
+}
+
+export interface VoiceMatchItem {
+  shelter: Shelter
+  score: number
+  distance_km: number | null
+  walk_minutes: number | null
+  reasoning_trace: string[]
+  reasoning_text: string
+}
+
+export interface VoiceMatchResponse {
+  ok: boolean
+  criteria: VoiceCriteria
+  area_name: string | null
+  narration: string
+  spoken_answer: string
+  matches: VoiceMatchItem[]
+}
+
+export interface SpeakResponse {
+  ok: boolean
+  audio_url?: string
+  fallback_tts?: boolean
+  text?: string
+}
+

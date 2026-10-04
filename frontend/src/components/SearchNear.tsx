@@ -1,4 +1,4 @@
-import { LocateFixed, Search } from 'lucide-react'
+import { LocateFixed, Mic, Search } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { AREAS } from '../lib/areas'
 
@@ -7,10 +7,11 @@ interface Props {
   locating: boolean
   onSearch: (text: string) => void
   onLocate: () => void
+  onVoiceMatch?: () => void
 }
 
 /** "Searching near" field: type an area (with suggestions) or use the phone's location. */
-export function SearchNear({ label, locating, onSearch, onLocate }: Props) {
+export function SearchNear({ label, locating, onSearch, onLocate, onVoiceMatch }: Props) {
   const [text, setText] = useState(label)
   useEffect(() => setText(label), [label])
 
@@ -44,6 +45,17 @@ export function SearchNear({ label, locating, onSearch, onLocate }: Props) {
             ))}
           </datalist>
         </div>
+        {onVoiceMatch && (
+          <button
+            type="button"
+            onClick={onVoiceMatch}
+            aria-label="Voice bed match"
+            title="Voice bed match (speak or type needs)"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] border border-green-tint-border bg-green-tint text-green-strong hover:bg-green-tint/80 active:scale-95"
+          >
+            <Mic aria-hidden size={20} />
+          </button>
+        )}
         <button
           type="button"
           onClick={onLocate}

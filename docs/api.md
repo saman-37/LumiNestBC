@@ -152,14 +152,63 @@ Clients replace their copy of that shelter by `id`.
 | `GET /api/stats`, `GET /api/stats/<anything>` | `501 {"error": "not_implemented", "tier": 3}` |
 | `GET /api/weather-layer` | `501 {"error": "not_implemented", "tier": 3}` |
 
+## Voice Matching & Speech (Communications)
+
+### `POST /api/match`
+Accepts a natural speech transcript and optional coordinates. Uses Gemini (with heuristic fallback) to extract needs, ranks real open beds, and generates reasoning traces and spoken answers.
+```json
+{
+  "transcript": "Woman with a small dog near Main and Hastings, uses a walker",
+  "lat": 49.2812,
+  "lng": -123.0995
+}
+```
+Response `200`:
+```json
+{
+  "ok": true,
+  "criteria": { "gender": "woman", "has_pet": true, "needs_accessible": true, "area_text": "near Main and Hastings", "...": "..." },
+  "area_name": "Vancouver Downtown Eastside",
+  "narration": "Checking shelters near Vancouver Downtown Eastside...",
+  "spoken_answer": "Lantern House has 3 open beds, less than a kilometre from Vancouver Downtown Eastside. The address is 100 Main St. Their count was updated 4 minutes ago.",
+  "matches": [
+    {
+      "shelter": <Shelter>,
+      "score": 0.53,
+      "distance_km": 0.4,
+      "walk_minutes": 6,
+      "reasoning_trace": ["Accessible ✓", "Pets OK ✓", "6 min walk", "updated 4 min ago"],
+      "reasoning_text": "Accessible ✓ · Pets OK ✓ · 6 min walk · updated 4 min ago"
+    }
+  ]
+}
+```
+
+### `POST /api/speak`
+Converts text to ElevenLabs voice audio, returning cached audio URL, or signals client fallback TTS.
+```json
+{ "text": "Best match: Lantern House with 3 open beds. Hold it for 60 minutes?" }
+```
+Response `200`:
+```json
+{ "ok": true, "audio_url": "/audio/32ff139a2f7540d4a9a932e6d218174c.mp3" }
+```
+Or fallback if ElevenLabs is unavailable:
+```json
+{ "ok": false, "fallback_tts": true, "text": "..." }
+```
+
+### `GET /audio/<id>.mp3`
+Streams cached ElevenLabs MP3 audio for speech playback.
+
 ## Twilio webhooks (Tier 2, Communications)
 
 All of these return TwiML (`text/xml`).
 
-| Endpoint | Now | Planned |
+| Endpoint | Status | Description |
 |---|---|---|
-| `POST /twilio/voice` | **Works:** spoken greeting + `<Gather input="speech">` | same |
-| `POST /twilio/voice/heard` | filler + redirect | `SpeechResult` → `gemini.extract_voice_request()` |
-| `POST /twilio/voice/answer` | "still being set up" + hang up | `matcher.rank_shelters()` → speak top 2 |
-| `GET /audio/<id>.mp3` | 501 | cached ElevenLabs audio |
-| `POST /twilio/sms` | placeholder reply | `gemini.parse_staff_text()` → bed change (`source='sms'`) |
+| `POST /twilio/voice` | 200 | Greeting + `<Gather input="speech">` |
+| `POST /twilio/voice/heard` | 200 | Stores `SpeechResult`, plays filler + redirects to `/twilio/voice/answer` |
+| `POST /twilio/voice/answer` | 200 | `gemini.extract_voice_request()` → `matcher.rank_shelters()` → speaks top matches via ElevenLabs |
+| `POST /twilio/sms` | 200 | Staff text → `gemini.parse_staff_text()` → bed change (`source='sms'`) |
+
