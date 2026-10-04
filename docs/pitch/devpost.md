@@ -9,14 +9,10 @@ They start phoning shelters, one by one. Most are full. Some don't pick up. The 
 they're checking was last updated at 7:30pm. [BC211's shelter list](https://bc.211.ca/shelter-lists/)
 updates twice a day, Monday to Friday. Nothing changes overnight or on weekends.
 
-Other cities have tried live bed apps. They hit the same wall: someone has to keep the
-count updated, and on a busy shift that's a chore. Los Angeles was told to build a bed
-system in 2016. Seven years later, staff [still tracked beds by phone calls and daily emails](https://laist.com/news/housing-homelessness/finding-a-shelter-bed-in-la-isnt-easy-la-city-controller-releases-audit),
-and its app ["had inaccurate data and did not attract large participation by providers"](https://www.yahoo.com/news/woefully-inadequate-why-hard-shelter-221042528.html).
-In 2017 a Vancouver writer pointed out that the best B.C. shelter map
-[showed total beds, never open ones](https://www.straight.com/life/990761/homeless-vancouver-shouldnt-be-so-hard-google-shelter-bed-internet).
-
-So we started from the front desk. If updating takes one tap, it gets done.
+Cities have tried live shelter-bed apps before. Los Angeles built one, and a
+[2023 city audit](https://laist.com/news/housing-homelessness/finding-a-shelter-bed-in-la-isnt-easy-la-city-controller-releases-audit)
+found it had [inaccurate data and few shelters using it](https://www.yahoo.com/news/woefully-inadequate-why-hard-shelter-221042528.html).
+The problem isn't the map, it's keeping the counts updated. We made updating take one tap.
 
 ## What it does
 
