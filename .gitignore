@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 data/tag_links*.csv
+data/tag_links*.html
 
 # Python
 .venv/
