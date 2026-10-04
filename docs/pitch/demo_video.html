@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenBed (LumiNestBC) — Automated 2-Minute Demo Video</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    
+    :root {
+      --bg: #070b0d;
+      --card: #0f1619;
+      --border: #1a2529;
+      --green: #19b37e;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: #e6edeb;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .scene {
+      display: none;
+      opacity: 0;
+      transform: scale(0.98);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .scene.active {
+      display: flex;
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .glow-green {
+      box-shadow: 0 0 35px rgba(25, 179, 126, 0.25);
+    }
+
+    .soundwave-bar {
+      animation: soundwave 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes soundwave {
+      0% { height: 6px; }
+      100% { height: 32px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-6 md:p-10 relative">
+
+  <!-- Header -->
+  <header class="w-full flex items-center justify-between border-b border-zinc-800 pb-4 z-20">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
+        OB
+      </div>
+      <div>
+        <h1 class="text-xs uppercase tracking-widest font-bold text-emerald-400">OpenBed · Automated Demo Reel</h1>
+        <p class="text-[11px] text-zinc-400">2-Minute Devpost & Hackathon Video Player</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <span id="timer" class="font-mono text-sm font-bold text-zinc-300 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
+        00:00 / 02:00
+      </span>
+
+      <button id="start-btn" onclick="togglePlay()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
+        <span id="play-icon">▶</span> <span id="play-text">Play Demo with Voiceover</span>
+      </button>
+
+      <button id="record-btn" onclick="toggleRecording()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+        <span id="record-text">Record Screen (MP4/WebM)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Video Stage / Viewport -->
+  <main class="flex-1 w-full max-w-5xl mx-auto flex items-center justify-center my-6 relative z-10">
+    
+    <div id="video-frame" class="w-full aspect-[16/9] bg-[#0c1215] border border-zinc-800 rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+
+      <!-- Scene 1: The Cold Reality (0:00 - 0:25) -->
+      <div id="scene-1" class="scene active flex-col justify-between h-full w-full">
+        <div class="flex justify-between items-center text-xs text-zinc-500 font-mono">
+          <span>SCENE 01 / 05</span>
+          <span class="text-rose-400 font-semibold">THE PROBLEM</span>
+        </div>
+
+        <div class="text-center my-auto max-w-2xl mx-auto">
+          <div class="inline-block px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold uppercase tracking-wider mb-4">
+            11:00 PM · East Hastings, Vancouver
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
+            Someone is in the freezing rain.<br/>
+            <span class="text-rose-400 font-medium">And the public shelter list is frozen.</span>
+          </h2>
+          <div class="grid grid-cols-2 gap-4 mt-6 text-left max-w-lg mx-auto">
+            <div class="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs">
+              <span class="text-zinc-500 block">BC211 Public List:</span>
+              <strong class="text-white">Updated 2x / day (Weekdays)</strong>
+              <p class="text-rose-400 mt-1">Zero weekend/night updates</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs">
+              <span class="text-zinc-500 block">Outreach Reality:</span>
+              <strong class="text-white">45–60 min blind calls</strong>
+              <p class="text-amber-400 mt-1">Calling full shelters while cold</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center text-xs text-zinc-500 font-mono">
+          Tagline: A bed tonight, found in 60 seconds, not 60 phone calls.
+        </div>
+      </div>
+
+      <!-- Scene 2: Flow A (NFC Tap Board) (0:25 - 0:50) -->
+      <div id="scene-2" class="scene flex-col justify-between h-full w-full">
+        <div class="flex justify-between items-center text-xs text-zinc-500 font-mono">
+          <span>SCENE 02 / 05</span>
+          <span class="text-emerald-400 font-semibold">FLOW A: TAP BOARD</span>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 items-center my-auto">
+          <div>
+            <div class="inline-block px-2.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold uppercase mb-2">
+              Shelter Front Desk
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-bold text-white leading-snug">
+              2 Seconds to Update.<br/>
+              <span class="text-emerald-400">Zero apps. Zero login.</span>
+            </h3>
+            <p class="text-xs text-zinc-400 mt-3 leading-relaxed">
+              Physical NFC stickers by the register. Staff tap their phone when someone checks in or leaves.
+            </p>
+            <div class="mt-4 flex items-center gap-2 text-xs font-mono text-emerald-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Sub-300ms WebSocket broadcast</span>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-6 text-center">
+            <div class="text-xs text-zinc-500 font-mono">YUKON SHELTER DESK</div>
+            <div id="demo-counter" class="text-5xl font-mono font-black text-emerald-400 my-3">
+              14 BEDS
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <div class="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs">
+                +1 Bed Freed
+              </div>
+              <div class="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-xs">
+                −1 Bed Filled
+              </div>
+            </div>
+            <div class="mt-3 text-[11px] text-zinc-400 bg-zinc-800/80 py-1.5 px-3 rounded-lg border border-zinc-700">
+              🔄 10-Second Undo Protection Active
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-zinc-500 font-mono text-center">
+          Idempotent cryptographic tokens prevent double-counting on poor cell signal.
+        </div>
+      </div>
+
+      <!-- Scene 3: Flow B (Live Freshness Map) (0:50 - 1:15) -->
+      <div id="scene-3" class="scene flex-col justify-between h-full w-full">
+        <div class="flex justify-between items-center text-xs text-zinc-500 font-mono">
+          <span>SCENE 03 / 05</span>
+          <span class="text-blue-400 font-semibold">FLOW B: FRESHNESS MAP</span>
+        </div>
+
+        <div class="my-auto">
+          <div class="text-center mb-6">
+            <h3 class="text-2xl sm:text-3xl font-bold text-white">Live Data Freshness on Every Pin</h3>
+            <p class="text-xs text-zinc-400 mt-1">Outreach workers know whether to trust the number before walking someone there.</p>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl bg-zinc-900 border border-emerald-500/30">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-sm font-bold text-white">Green (&lt;60 min)</span>
+              </div>
+              <p class="text-xs text-zinc-400">High confidence. Staff confirmed count recently.</p>
+            </div>
+            <div class="p-4 rounded-xl bg-zinc-900 border border-amber-500/30">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span>
+                <span class="text-sm font-bold text-white">Amber (1–3 hours)</span>
+              </div>
+              <p class="text-xs text-zinc-400">Getting stale. Tap-to-call button highlighted.</p>
+            </div>
+            <div class="p-4 rounded-xl bg-zinc-900 border border-rose-500/30">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-rose-500"></span>
+                <span class="text-sm font-bold text-white">Red (&gt;3 hours)</span>
+              </div>
+              <p class="text-xs text-zinc-400">Unconfirmed. Workers warned to avoid blind trips.</p>
+            </div>
+          </div>
+
+          <div class="mt-4 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs text-zinc-300 flex items-center justify-between">
+            <span>Filter by needs:</span>
+            <div class="flex gap-2">
+              <span class="px-2 py-0.5 rounded bg-zinc-800 text-emerald-400 font-semibold">Women Only</span>
+              <span class="px-2 py-0.5 rounded bg-zinc-800 text-emerald-400 font-semibold">Youth</span>
+              <span class="px-2 py-0.5 rounded bg-zinc-800 text-emerald-400 font-semibold">Pets OK</span>
+              <span class="px-2 py-0.5 rounded bg-zinc-800 text-emerald-400 font-semibold">Accessible</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-zinc-500 font-mono text-center">
+          67 real shelters tracked across Vancouver, Surrey, Burnaby & Richmond.
+        </div>
+      </div>
+
+      <!-- Scene 4: Flow C (Voice Match & 60-Min Hold) (1:15 - 1:45) -->
+      <div id="scene-4" class="scene flex-col justify-between h-full w-full">
+        <div class="flex justify-between items-center text-xs text-zinc-500 font-mono">
+          <span>SCENE 04 / 05</span>
+          <span class="text-purple-400 font-semibold">FLOW C: VOICE MATCH & HOLD</span>
+        </div>
+
+        <div class="my-auto max-w-3xl mx-auto w-full">
+          <!-- Voice Input Bar -->
+          <div class="p-4 rounded-2xl bg-zinc-900 border border-purple-500/40 mb-4">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                🎙️
+              </div>
+              <div class="flex-1">
+                <div class="text-[10px] uppercase font-mono text-purple-400 font-bold">Voice Request Spoken</div>
+                <div class="text-sm font-semibold text-white">"Woman with a small dog near Main and Hastings, uses a walker"</div>
+              </div>
+              <div class="flex gap-1 items-end h-6">
+                <div class="w-1 bg-purple-400 soundwave-bar" style="animation-delay: 0.1s"></div>
+                <div class="w-1 bg-purple-400 soundwave-bar" style="animation-delay: 0.3s"></div>
+                <div class="w-1 bg-purple-400 soundwave-bar" style="animation-delay: 0.2s"></div>
+                <div class="w-1 bg-purple-400 soundwave-bar" style="animation-delay: 0.4s"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Matched Card -->
+          <div class="p-5 rounded-2xl bg-zinc-900 border border-emerald-500/50 shadow-xl">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-bold uppercase">#1 Best Match</span>
+                <h4 class="text-xl font-bold text-white mt-1">New Fountain Shelter</h4>
+                <p class="text-xs text-zinc-400">356 East Hastings St · 3 min walk (0.21 km)</p>
+              </div>
+              <div class="text-right">
+                <span class="text-3xl font-bold font-mono text-emerald-400">14</span>
+                <span class="block text-[11px] text-zinc-400">beds open</span>
+              </div>
+            </div>
+
+            <div class="flex gap-1.5 mt-3 pt-3 border-t border-zinc-800">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-semibold">Accessible ✓</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-semibold">Pets OK ✓</span>
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-xs font-semibold">3 min walk</span>
+              <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 text-xs">updated just now</span>
+            </div>
+
+            <div class="mt-4 pt-3 flex justify-between items-center bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/30">
+              <span class="text-xs font-bold text-white">🔒 Bed Held for 60 Minutes</span>
+              <span class="font-mono text-xs font-bold text-emerald-400 bg-zinc-900 px-2 py-1 rounded">59:58 remaining</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-zinc-500 font-mono text-center">
+          ElevenLabs voice narration + Atomic row lock prevents double-booking.
+        </div>
+      </div>
+
+      <!-- Scene 5: Architecture & Closing (1:45 - 2:00) -->
+      <div id="scene-5" class="scene flex-col justify-between h-full w-full text-center">
+        <div class="flex justify-between items-center text-xs text-zinc-500 font-mono">
+          <span>SCENE 05 / 05</span>
+          <span class="text-emerald-400 font-semibold">IMPACT & TECH</span>
+        </div>
+
+        <div class="my-auto max-w-2xl mx-auto">
+          <h3 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
+            A bed tonight, found in <span class="text-emerald-400">60 seconds</span>,<br/>
+            not 60 phone calls.
+          </h3>
+
+          <div class="grid grid-cols-4 gap-3 my-6">
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <span class="text-[10px] text-zinc-500 font-mono block">DATABASE</span>
+              <strong class="text-xs text-white">Tiger Data</strong>
+              <span class="text-[10px] text-emerald-400 block font-mono">TimescaleDB</span>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <span class="text-[10px] text-zinc-500 font-mono block">AI EXTRACTION</span>
+              <strong class="text-xs text-white">Gemini 2.5</strong>
+              <span class="text-[10px] text-purple-400 block font-mono">Zero Hallucinations</span>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <span class="text-[10px] text-zinc-500 font-mono block">VOICE NARRATION</span>
+              <strong class="text-xs text-white">ElevenLabs</strong>
+              <span class="text-[10px] text-blue-400 block font-mono">Audio Streaming</span>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <span class="text-[10px] text-zinc-500 font-mono block">PRIVACY</span>
+              <strong class="text-xs text-white">Zero Names</strong>
+              <span class="text-[10px] text-emerald-400 block font-mono">DV Fortified</span>
+            </div>
+          </div>
+
+          <p class="text-xs text-zinc-400 font-mono">
+            github.com/saman-37/LumiNestBC · StormHacks 2026
+          </p>
+        </div>
+
+        <div class="text-xs text-zinc-500 font-mono">
+          Thank you from the OpenBed / LumiNestBC Team.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Narration Subtitles Bar -->
+  <div class="w-full max-w-5xl mx-auto bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 text-center z-20">
+    <div class="text-[10px] uppercase font-mono font-bold text-emerald-400 mb-1">Live Voiceover Subtitles</div>
+    <div id="subtitles" class="text-sm font-medium text-white italic">
+      "Press 'Play Demo with Voiceover' to start the automated 2-minute demonstration."
+    </div>
+  </div>
+
+  <script>
+    const scenes = [
+      {
+        id: "scene-1",
+        duration: 24,
+        text: "It's 11 PM on East Hastings. Rain is falling. An outreach worker is standing with someone who needs a warm bed tonight. The official BC211 public shelter list updates only twice a day on weekdays. At night and over weekends, it is completely frozen. Outreach workers spend 45 minutes making blind phone calls to full shelters while someone shivers outside. This is OpenBed: a live shelter-bed network for Metro Vancouver. A bed tonight, found in 60 seconds, not 60 phone calls."
+      },
+      {
+        id: "scene-2",
+        duration: 25,
+        text: "Cities have tried shelter apps before, but they failed because entering data was too slow. We made updating take two seconds. Here is the front desk of a shelter. Beside the register are physical NFC tags. When a guest leaves, staff tap 'Bed Freed'. No login, no typing, no app install. Instantly, across every phone in Metro Vancouver, the bed count updates in under 300 milliseconds. And if they mistap, a 10-second instant undo fixes it immediately."
+      },
+      {
+        id: "scene-3",
+        duration: 25,
+        text: "On the outreach side, workers open the live dark map. Shelters with open beds glow in emerald green. Notice the halos: green means staff confirmed within the hour, amber means call to verify, and red means over 3 hours old. Outreach workers filter for women only, youth, pets, or wheelchair accessibility with one tap. Real-time clustering tracks over 1,800 beds across 67 Metro Vancouver facilities."
+      },
+      {
+        id: "scene-4",
+        duration: 30,
+        text: "Now the magic: the worker taps the mic button: 'Woman with a small dog near Main and Hastings, uses a walker.' Gemini extracts the structured criteria without touching personal names. Plain Python filters real shelters by proximity and freshness. ElevenLabs speaks back the best match, complete with reasoning traces: Accessible, Pets Allowed, 3-minute walk. The worker taps 'Hold Bed'. Using database row-level locking on Tiger Data TimescaleDB, the bed is guaranteed for 60 minutes with a live countdown timer. Zero risk of double-booking."
+      },
+      {
+        id: "scene-5",
+        duration: 16,
+        text: "Built with Tiger Data TimescaleDB, Gemini 2.5 Flash, ElevenLabs voice synthesis, and React. With OpenBed, no one is left out in the cold while an open bed sits empty. Thank you."
+      }
+    ];
+
+    let currentSceneIdx = 0;
+    let isPlaying = false;
+    let elapsedSeconds = 0;
+    let timerInterval = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    const subtitlesEl = document.getElementById("subtitles");
+    const timerEl = document.getElementById("timer");
+    const playText = document.getElementById("play-text");
+    const playIcon = document.getElementById("play-icon");
+
+    function formatTime(s) {
+      const mins = Math.floor(s / 60);
+      const secs = s % 60;
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function showScene(idx) {
+      document.querySelectorAll(".scene").forEach(el => el.classList.remove("active"));
+      const target = document.getElementById(scenes[idx].id);
+      if (target) target.classList.add("active");
+      currentSceneIdx = idx;
+      subtitlesEl.textContent = `"${scenes[idx].text}"`;
+    }
+
+    function speakCurrentScene() {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(scenes[currentSceneIdx].text);
+      u.rate = 1.05;
+      u.lang = 'en-US';
+      window.speechSynthesis.speak(u);
+    }
+
+    function togglePlay() {
+      if (isPlaying) {
+        pauseDemo();
+      } else {
+        startDemo();
+      }
+    }
+
+    function startDemo() {
+      isPlaying = true;
+      playText.textContent = "Pause Demo";
+      playIcon.textContent = "⏸";
+
+      showScene(currentSceneIdx);
+      speakCurrentScene();
+
+      let sceneSecondsRemaining = scenes[currentSceneIdx].duration;
+
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        sceneSecondsRemaining--;
+        timerEl.textContent = `${formatTime(elapsedSeconds)} / 02:00`;
+
+        if (sceneSecondsRemaining <= 0) {
+          if (currentSceneIdx < scenes.length - 1) {
+            currentSceneIdx++;
+            showScene(currentSceneIdx);
+            speakCurrentScene();
+            sceneSecondsRemaining = scenes[currentSceneIdx].duration;
+          } else {
+            pauseDemo();
+            currentSceneIdx = 0;
+            elapsedSeconds = 0;
+          }
+        }
+      }, 1000);
+    }
+
+    function pauseDemo() {
+      isPlaying = false;
+      playText.textContent = "Resume Demo";
+      playIcon.textContent = "▶";
+      clearInterval(timerInterval);
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+
+    // Screen Recording
+    async function toggleRecording() {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        document.getElementById("record-text").textContent = "Record Screen (MP4/WebM)";
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 30 } },
+          audio: true
+        });
+
+        recordedChunks = [];
+        let mimeType = 'video/webm; codecs=vp9';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
+        }
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'openbed_demo_recording.webm';
+          a.click();
+          stream.getTracks().forEach(t => t.stop());
+        };
+
+        mediaRecorder.start();
+        document.getElementById("record-text").textContent = "Stop & Save Video";
+        startDemo();
+      } catch (e) {
+        alert("Screen recording cancelled or not supported by browser. You can also use Windows Game Bar (Win + Alt + R) to record!");
+      }
+    }
+  </script>
+</body>
+</html>
