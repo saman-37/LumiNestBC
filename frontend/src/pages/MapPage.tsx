@@ -1,5 +1,5 @@
 import type { Map as LeafletMap } from 'leaflet'
-import { ArrowLeft, LocateFixed, Minus, Plus } from 'lucide-react'
+import { ArrowLeft, LocateFixed, Mic, Minus, Plus } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
@@ -12,6 +12,7 @@ import type { ListedShelter } from '../components/ShelterCard'
 import { ShelterDetailView } from '../components/ShelterDetailView'
 import { ListHeader, ShelterListView } from '../components/ShelterListView'
 import { useToast } from '../components/Toast'
+import { VoiceMatchSheet } from '../components/VoiceMatchSheet'
 import { WeatherBanner } from '../components/WeatherBanner'
 import { WorkerSheet } from '../components/WorkerSheet'
 import { api, ApiError } from '../lib/api'
@@ -60,6 +61,7 @@ export default function MapPage() {
   const [pendingHold, setPendingHold] = useState<Shelter | null>(null)
   const [justTakenId, setJustTakenId] = useState<string | null>(null)
   const [shakeKey, setShakeKey] = useState(0)
+  const [voiceOpen, setVoiceOpen] = useState(false)
 
   // ---- layout measurements (so the map frames pins inside the visible area) ----
   const [snap, setSnap] = useState<Snap>('peek')
@@ -204,7 +206,13 @@ export default function MapPage() {
 
   const controls = (
     <>
-      <SearchNear label={originLabel} locating={locating} onSearch={search} onLocate={locate} />
+      <SearchNear
+        label={originLabel}
+        locating={locating}
+        onSearch={search}
+        onLocate={locate}
+        onVoiceMatch={() => setVoiceOpen(true)}
+      />
       <FilterBar active={filters} onToggle={toggleFilter} onOpenSheet={() => setFilterSheet(true)} />
       <div className="px-4 pb-3 pt-1 empty:hidden">
         {WEATHER_MODE && <WeatherBanner />}
@@ -280,6 +288,15 @@ export default function MapPage() {
       className="absolute right-3 z-[950] flex flex-col gap-2 transition-[top] duration-300"
       style={{ top: desktop ? DESKTOP_MARGIN : topPx + 12, right: desktop ? DESKTOP_MARGIN : 12 }}
     >
+      <button
+        type="button"
+        aria-label="Voice bed match"
+        title="Voice bed match"
+        onClick={() => setVoiceOpen(true)}
+        className={`${ctrlBtn} border-green-tint-border bg-green-tint text-green-strong hover:bg-green-tint/80`}
+      >
+        <Mic aria-hidden size={20} />
+      </button>
       <button type="button" aria-label="Show my location" onClick={locate} disabled={locating} className={`${ctrlBtn} text-blue`}>
         <LocateFixed aria-hidden size={20} className={locating ? 'animate-pulse' : ''} />
       </button>
@@ -316,8 +333,16 @@ export default function MapPage() {
 
       {desktop ? (
         <>
-          <div className="pointer-events-none absolute bottom-3 z-[900]" style={{ left: DESKTOP_PANEL + DESKTOP_MARGIN * 2 }}>
+          <div className="pointer-events-none absolute bottom-3 z-[900] flex items-center gap-2" style={{ left: DESKTOP_PANEL + DESKTOP_MARGIN * 2 }}>
             <DemoBadge />
+            <button
+              type="button"
+              onClick={() => setVoiceOpen(true)}
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-green-tint-border bg-surface px-3 py-1 text-[13px] font-bold text-green-strong shadow-[var(--shadow-float)] hover:bg-green-tint active:scale-95"
+            >
+              <Mic size={15} />
+              <span>Voice Match</span>
+            </button>
           </div>
           {attribution && (
             <span className="pointer-events-none absolute bottom-2 right-2 z-[900] rounded-md bg-surface/85 px-1.5 py-0.5 text-[10px] text-text-muted">
@@ -327,10 +352,20 @@ export default function MapPage() {
         </>
       ) : (
         <div
-          className="pointer-events-none absolute inset-x-3 z-[900] flex flex-col items-start gap-1 transition-[bottom] duration-300"
+          className="pointer-events-none absolute inset-x-3 z-[900] flex items-center justify-between gap-1 transition-[bottom] duration-300"
           style={{ bottom: sheetPx + 8 }}
         >
-          <DemoBadge />
+          <div className="flex items-center gap-2">
+            <DemoBadge />
+            <button
+              type="button"
+              onClick={() => setVoiceOpen(true)}
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-green-tint-border bg-surface px-3 py-1 text-[13px] font-bold text-green-strong shadow-[var(--shadow-float)] hover:bg-green-tint active:scale-95"
+            >
+              <Mic size={15} />
+              <span>Voice Match</span>
+            </button>
+          </div>
           {attribution && (
             <span className="max-w-full rounded-md bg-surface/85 px-1.5 py-0.5 text-[10px] text-text-muted">{attribution}</span>
           )}
@@ -404,6 +439,13 @@ export default function MapPage() {
           setPendingHold(null)
           if (shelter) hold(shelter, worker)
         }}
+      />
+      <VoiceMatchSheet
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        coords={origin ? { lat: origin.lat, lng: origin.lng } : null}
+        onSelectShelter={select}
+        onHoldShelter={requestHold}
       />
     </div>
   )

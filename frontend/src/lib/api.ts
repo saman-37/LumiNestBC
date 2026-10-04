@@ -3,6 +3,7 @@ import type {
   HoldWithShelter,
   Shelter,
   SmsSimResult,
+  SpeakResponse,
   StaffChange,
   StaffDetail,
   StaffSettings,
@@ -10,6 +11,7 @@ import type {
   TagLink,
   TapResponse,
   UndoResponse,
+  VoiceMatchResponse,
   VoiceSimResult,
 } from './types'
 import type { Worker } from './worker'
@@ -72,6 +74,14 @@ export const api = {
   hold: (id: string) => request<HoldWithShelter>(`/api/holds/${enc(id)}`),
   arriveHold: (id: string) => send<HoldWithShelter>('POST', `/api/holds/${enc(id)}/arrive`),
   cancelHold: (id: string) => send<HoldWithShelter>('DELETE', `/api/holds/${enc(id)}`),
+
+  matchVoice: (transcript: string, coords?: { lat: number; lng: number } | null) =>
+    send<VoiceMatchResponse>('POST', '/api/match', {
+      transcript,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
+    }),
+  speak: (text: string) => send<SpeakResponse>('POST', '/api/speak', { text }),
 }
 
 /** Shelter staff portal. Every call needs the shelter's staff key. */

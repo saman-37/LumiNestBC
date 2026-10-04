@@ -227,6 +227,56 @@ Clients replace their copy of that shelter by `id`.
 | `GET /api/stats`, `GET /api/stats/<anything>` | `501 {"error": "not_implemented", "tier": 3}` |
 | `GET /api/weather-layer` | `501 {"error": "not_implemented", "tier": 3}` |
 
+<<<<<<< HEAD
+## Voice Matching & Speech (Communications)
+
+### `POST /api/match`
+Accepts a natural speech transcript and optional coordinates. Uses Gemini (with heuristic fallback) to extract needs, ranks real open beds, and generates reasoning traces and spoken answers.
+```json
+{
+  "transcript": "Woman with a small dog near Main and Hastings, uses a walker",
+  "lat": 49.2812,
+  "lng": -123.0995
+}
+```
+Response `200`:
+```json
+{
+  "ok": true,
+  "criteria": { "gender": "woman", "has_pet": true, "needs_accessible": true, "area_text": "near Main and Hastings", "...": "..." },
+  "area_name": "Vancouver Downtown Eastside",
+  "narration": "Checking shelters near Vancouver Downtown Eastside...",
+  "spoken_answer": "Lantern House has 3 open beds, less than a kilometre from Vancouver Downtown Eastside. The address is 100 Main St. Their count was updated 4 minutes ago.",
+  "matches": [
+    {
+      "shelter": <Shelter>,
+      "score": 0.53,
+      "distance_km": 0.4,
+      "walk_minutes": 6,
+      "reasoning_trace": ["Accessible ✓", "Pets OK ✓", "6 min walk", "updated 4 min ago"],
+      "reasoning_text": "Accessible ✓ · Pets OK ✓ · 6 min walk · updated 4 min ago"
+    }
+  ]
+}
+```
+
+### `POST /api/speak`
+Converts text to ElevenLabs voice audio, returning cached audio URL, or signals client fallback TTS.
+```json
+{ "text": "Best match: Lantern House with 3 open beds. Hold it for 60 minutes?" }
+```
+Response `200`:
+```json
+{ "ok": true, "audio_url": "/audio/32ff139a2f7540d4a9a932e6d218174c.mp3" }
+```
+Or fallback if ElevenLabs is unavailable:
+```json
+{ "ok": false, "fallback_tts": true, "text": "..." }
+```
+
+### `GET /audio/<id>.mp3`
+Streams cached ElevenLabs MP3 audio for speech playback.
+
 ## Twilio webhooks (Communications)
 
 All of these return TwiML (`text/xml`). When `TWILIO_AUTH_TOKEN` is set, `/twilio/*` requests
