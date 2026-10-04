@@ -1,7 +1,6 @@
 # LuminestBC — Pitch Deck
 
 > **"Find the lights still on."**  
-> *A bed tonight, found in 60 seconds, not 60 phone calls.*  
 > *StormHacks 2026 · Metro Vancouver Live Shelter-Bed Network*
 
 ---
@@ -172,7 +171,7 @@ Built and populated with **67 real Metro Vancouver shelters**:
 
 ## Slide 8: The Close & Vision
 
-> ### "A bed tonight, found in 60 seconds, not 60 phone calls."
+> ### "Find the lights still on."
 
 By removing all data entry friction for shelter staff and giving outreach workers instant voice search and guaranteed 60-minute holds, LuminestBC ensures that no one is left outside in the rain while a bed sits empty.
 
