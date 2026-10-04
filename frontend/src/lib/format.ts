@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { EventSource } from './types'
 
 export function formatAgo(minutes: number): string {
   if (minutes < 1) return 'just now'
@@ -52,4 +53,19 @@ export function newTapId(): string {
   b[8] = (b[8] & 0x3f) | 0x80
   const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
+}
+
+const SOURCE_LABELS: Record<EventSource, string> = {
+  tap: 'Tap Board',
+  undo: 'Tap Board',
+  sms: 'Text',
+  staff: 'Staff',
+  hold: 'Hold',
+  arrival: 'Arrival tag',
+  expiry: 'Hold expired',
+}
+
+/** "Tap Board", "Text", "Staff"… for "Updated 4 min ago · Tap Board". */
+export function sourceLabel(source: EventSource | null | undefined): string | null {
+  return source ? SOURCE_LABELS[source] : null
 }

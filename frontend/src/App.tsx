@@ -3,6 +3,9 @@ import type { ReactNode } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
 import { ToastProvider } from './components/Toast'
 import { ShelterProvider } from './lib/shelterStore'
+import AdminPage from './pages/AdminPage'
+import AdminSmsPage from './pages/AdminSmsPage'
+import AdminVoicePage from './pages/AdminVoicePage'
 import HoldPage from './pages/HoldPage'
 import MapPage from './pages/MapPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -32,6 +35,10 @@ function AnimatedRoutes() {
         <Route path="/hold/:id" element={<Page><HoldPage /></Page>} />
         <Route path="/t/:shelterId/:action" element={<Page><TapPage /></Page>} />
         <Route path="/staff/:shelterId" element={<Page><StaffPage /></Page>} />
+        {/* Hidden test hub; the API returns 404 unless DEV_TOOLS_ENABLED=true */}
+        <Route path="/admin" element={<Page><AdminPage /></Page>} />
+        <Route path="/admin/voice" element={<Page><AdminVoicePage /></Page>} />
+        <Route path="/admin/sms" element={<Page><AdminSmsPage /></Page>} />
         <Route path="*" element={<Page><NotFoundPage /></Page>} />
       </Routes>
     </AnimatePresence>

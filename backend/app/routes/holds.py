@@ -40,6 +40,8 @@ def create_hold():
         shelter = lock_shelter(conn, shelter_id)
         if shelter is None:
             return {"error": "shelter_not_found"}, 404
+        if not shelter["accepting"]:
+            return {"error": "not_accepting"}, 409
         if shelter["open_beds"] < 1:
             return {"error": "just_taken"}, 409
         updated, _ = change_beds(conn, shelter_id, delta=-1, source="hold")

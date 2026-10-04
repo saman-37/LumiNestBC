@@ -5,7 +5,8 @@ import { bedsWord, shelterState, type ShelterState } from '../../lib/filters'
 import type { Shelter } from '../../lib/types'
 import { PinTooltip } from './PinTooltip'
 
-function pinLabel(state: ShelterState, beds: number): string {
+function pinLabel(state: ShelterState, beds: number, accepting: boolean): string {
+  if (!accepting) return 'Closed'
   if (state === 'full') return 'Full'
   if (state === 'stale') return `${beds}?`
   return String(beds)
@@ -40,7 +41,7 @@ interface Props {
 export function ShelterMarker({ shelter, hidden, dimmed, selected, bumped, showTip, compactTip, km, onSelect, onHover }: Props) {
   const ref = useRef<LeafletMarker>(null)
   const state = shelterState(shelter)
-  const label = pinLabel(state, shelter.open_beds)
+  const label = pinLabel(state, shelter.open_beds, shelter.accepting)
 
   const icon = useMemo(
     () =>

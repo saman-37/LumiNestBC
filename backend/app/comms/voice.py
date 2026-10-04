@@ -1,14 +1,27 @@
 import json
 import logging
+import threading
+import time
 import urllib.request
 import uuid
 
 from .. import config
+from .http import ssl_context
 
 logger = logging.getLogger(__name__)
 
-# In-memory cache for generated MP3 audio chunks: audio_id -> bytes
+# Audio cache, in memory only (one gunicorn worker serves every call).
+#   _AUDIO_CACHE: audio_id -> MP3 bytes (served at GET /audio/<id>.mp3)
+#   _BY_TEXT:     exact text -> (audio_id, created_at, fixed)
+# The same phrase is generated once and reused. Fixed phrases stay forever; dynamic answers
+# are evicted after AUDIO_CACHE_TTL_SECONDS.
 _AUDIO_CACHE: dict[str, bytes] = {}
+_BY_TEXT: dict[str, tuple[str, float, bool]] = {}
+_cache_lock = threading.Lock()
+_text_locks: dict[str, threading.Lock] = {}
+
+# Said on every call, so they're generated at startup (prewarm_fixed_phrases).
+FIXED_PHRASES = ("greeting", "prompt", "filler", "no_speech", "no_match")
 
 TEMPLATES = {
     "greeting": (
@@ -99,13 +112,67 @@ def describe_match(match: dict, area_name: str | None) -> str | None:
 def cache_audio(audio_bytes: bytes) -> str:
     """Store generated MP3 bytes in memory and return a unique audio ID."""
     audio_id = uuid.uuid4().hex
-    _AUDIO_CACHE[audio_id] = audio_bytes
+    with _cache_lock:
+        _AUDIO_CACHE[audio_id] = audio_bytes
     return audio_id
 
 
 def get_cached_audio(audio_id: str) -> bytes | None:
     """Retrieve cached MP3 bytes by audio ID."""
     return _AUDIO_CACHE.get(audio_id)
+
+
+def _evict_expired_locked(now: float) -> None:
+    for text, (audio_id, created, fixed) in list(_BY_TEXT.items()):
+        if not fixed and now - created > config.AUDIO_CACHE_TTL_SECONDS:
+            del _BY_TEXT[text]
+            _AUDIO_CACHE.pop(audio_id, None)
+
+
+def audio_id_for(text: str, fixed: bool = False) -> str | None:
+    """Audio id for this exact text, generating it with ElevenLabs only the first time.
+
+    Returns None if text-to-speech isn't available (callers fall back to Twilio <Say>).
+    Concurrent requests for the same text wait for one generation instead of each calling.
+    """
+    with _cache_lock:
+        hit = _BY_TEXT.get(text)
+        if hit and hit[0] in _AUDIO_CACHE:
+            if fixed and not hit[2]:
+                _BY_TEXT[text] = (hit[0], hit[1], True)
+            return hit[0]
+        text_lock = _text_locks.setdefault(text, threading.Lock())
+    with text_lock:
+        with _cache_lock:
+            hit = _BY_TEXT.get(text)
+            if hit and hit[0] in _AUDIO_CACHE:
+                return hit[0]
+        audio = text_to_speech(text)
+        with _cache_lock:
+            _text_locks.pop(text, None)
+            if audio is None:
+                return None
+            now = time.monotonic()
+            _evict_expired_locked(now)
+            audio_id = uuid.uuid4().hex
+            _AUDIO_CACHE[audio_id] = audio
+            _BY_TEXT[text] = (audio_id, now, fixed)
+            return audio_id
+
+
+def prewarm_fixed_phrases() -> int:
+    """Generate the phrases every call uses, so callers never wait for them. Returns how many."""
+    if not config.ELEVENLABS_API_KEY:
+        return 0
+    ready = sum(audio_id_for(say(name), fixed=True) is not None for name in FIXED_PHRASES)
+    logger.info("voice: %d/%d fixed phrases ready", ready, len(FIXED_PHRASES))
+    return ready
+
+
+def clear_audio_cache() -> None:
+    with _cache_lock:
+        _AUDIO_CACHE.clear()
+        _BY_TEXT.clear()
 
 
 def text_to_speech(text: str, voice_id: str | None = None) -> bytes | None:
@@ -125,7 +192,7 @@ def text_to_speech(text: str, voice_id: str | None = None) -> bytes | None:
     }
     payload = {
         "text": text,
-        "model_id": "eleven_multilingual_v2",
+        "model_id": config.ELEVENLABS_MODEL,
         "voice_settings": {
             "stability": 0.5,
             "similarity_boost": 0.75,
@@ -139,7 +206,7 @@ def text_to_speech(text: str, voice_id: str | None = None) -> bytes | None:
             headers=headers,
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=5, context=ssl_context()) as resp:
             if resp.status == 200:
                 return resp.read()
             logger.warning("ElevenLabs responded with status %s", resp.status)

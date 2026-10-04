@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': backend,
         '/socket.io': { target: backend, ws: true },
+        '/audio': backend, // voice-line MP3s (admin voice simulator)
       },
     },
   }

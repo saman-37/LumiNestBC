@@ -316,6 +316,39 @@ body {
   border: 2px solid rgb(25 179 126 / 0.45);
 }
 
+/* Cluster light: several shelters close together. A stacked edge says "more than one";
+   the badge counts shelters, the body shows their beds. */
+.pin--cluster .pin__body {
+  min-width: 40px;
+  height: 40px;
+  font-size: 18px;
+  box-shadow: 3px -3px 0 -1px #ffffff, 3px -3px 0 1px var(--border-strong), 0 2px 6px rgb(16 40 35 / 0.25);
+}
+
+.pin--cluster.pin--full .pin__body {
+  height: 32px;
+}
+
+.pin__count {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-title);
+  border: 1.5px solid #ffffff;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
 .is-dimmed .pin {
   opacity: 0.35;
 }
@@ -433,5 +466,45 @@ body {
   }
   .is-selected .pin {
     transform: none;
+  }
+}
+
+/* Staff portal: the printable Tap Board sheet. Hidden on screen; the only thing printed. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+  .print-sheet {
+    display: block;
+    position: absolute;
+    inset: 0;
+    padding: 24px;
+    background: #ffffff;
+    color: #000000;
+    font-size: 13pt;
+  }
+  .print-sheet h1 {
+    font-size: 18pt;
+    font-weight: 700;
+  }
+  .print-sheet .print-tag {
+    margin-top: 18pt;
+    break-inside: avoid;
+  }
+  .print-sheet h2 {
+    font-size: 14pt;
+    font-weight: 700;
+  }
+  .print-sheet .print-tag p {
+    font-family: ui-monospace, monospace;
+    word-break: break-all;
   }
 }
