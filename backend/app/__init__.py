@@ -1,5 +1,5 @@
-"""Flask app factory. Owner: Backend (Person 2)."""
-from flask import Flask
+from pathlib import Path
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from . import config
@@ -25,5 +25,25 @@ def create_app(database_url: str | None = None) -> Flask:
     def health():
         return {"ok": True}
 
+    # Serve built frontend from frontend/dist if present (allows running everything on Port 8000)
+    dist_dir = config.REPO_ROOT / "frontend" / "dist"
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        if path.startswith(("api/", "socket.io", "twilio/", "health", "audio/")):
+            return {"error": "not_found"}, 404
+        target = dist_dir / path
+        if path and target.is_file():
+            return send_from_directory(dist_dir, path)
+        index_file = dist_dir / "index.html"
+        if index_file.exists():
+            return send_from_directory(dist_dir, "index.html")
+        return {
+            "error": "frontend_not_built",
+            "message": "Run `npm run build` in the frontend/ directory first.",
+        }, 404
+
     socketio.init_app(app, cors_allowed_origins=config.FRONTEND_ORIGINS, async_mode="threading")
     return app
+
