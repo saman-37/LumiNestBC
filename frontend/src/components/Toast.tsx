@@ -3,13 +3,18 @@ import { AnimatePresence, motion } from 'motion/react'
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react'
 
 type Tone = 'info' | 'success' | 'error'
+export interface ToastAction {
+  label: string
+  onClick: () => void
+}
 interface ToastItem {
   id: number
   message: string
   tone: Tone
+  action?: ToastAction
 }
 
-const Ctx = createContext<(message: string, tone?: Tone) => void>(() => {})
+const Ctx = createContext<(message: string, tone?: Tone, action?: ToastAction) => void>(() => {})
 
 /**
  * Toasts sit at the bottom, above the map's sheet. Pages that have a sheet set the
@@ -19,11 +24,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const next = useRef(1)
 
-  const show = useCallback((message: string, tone: Tone = 'info') => {
+  const dismiss = useCallback((id: number) => setToasts((prev) => prev.filter((t) => t.id !== id)), [])
+
+  const show = useCallback((message: string, tone: Tone = 'info', action?: ToastAction) => {
     const id = next.current++
-    setToasts((prev) => [...prev.slice(-2), { id, message, tone }])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500)
-  }, [])
+    setToasts((prev) => [...prev.slice(-2), { id, message, tone, action }])
+    setTimeout(() => dismiss(id), action ? 6000 : 3500) // longer when there's an Undo to press
+  }, [dismiss])
 
   return (
     <Ctx.Provider value={show}>
@@ -49,7 +56,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               ) : (
                 <CircleCheck aria-hidden size={18} className="shrink-0 text-[#8fe3b8]" />
               )}
-              <span>{t.message}</span>
+              <span className="min-w-0 flex-1">{t.message}</span>
+              {t.action && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    t.action?.onClick()
+                    dismiss(t.id)
+                  }}
+                  className="-my-1 min-h-11 shrink-0 rounded-[10px] px-3 font-semibold text-[#8fe3b8] hover:bg-white/10"
+                >
+                  {t.action.label}
+                </button>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>

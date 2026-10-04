@@ -66,7 +66,7 @@ def resolve_area(area_text: str | None) -> tuple[float, float] | None:
 
 
 def passes_hard_filters(req: dict, shelter: dict) -> bool:
-    if shelter["is_full"] or shelter["open_beds"] < 1:
+    if shelter["is_full"] or shelter["open_beds"] < 1 or not shelter.get("accepting", True):
         return False
     if req.get("gender") == "man" and shelter["women_only"]:
         return False

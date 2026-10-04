@@ -8,7 +8,9 @@ export function PinTooltip({ shelter, km, compact = false }: { shelter: Shelter;
   const state = shelterState(shelter)
   const tags = FILTERS.filter((f) => shelter[f.key])
   const beds =
-    state === 'full'
+    !shelter.accepting
+      ? 'Not accepting tonight'
+      : state === 'full'
       ? 'Full tonight'
       : state === 'stale'
         ? `${shelter.open_beds} ${bedsWord(shelter.open_beds)}, unconfirmed`

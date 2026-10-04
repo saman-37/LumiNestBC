@@ -1,6 +1,7 @@
 """Read-only shelter endpoints. Owner: Backend (Person 2).
 
-GET requests never change data.
+GET requests never change data. Holds and events name outreach workers, so they need the
+shelter's staff key (X-Staff-Key), same as the staff portal.
 """
 from datetime import datetime, timezone
 
@@ -8,6 +9,7 @@ from flask import Blueprint, request
 
 from ..availability import iso, public_shelter, serialize_hold
 from ..db import transaction
+from .staff import load_events, require_staff
 
 bp = Blueprint("shelters", __name__)
 
@@ -29,9 +31,8 @@ def get_shelter(shelter_id):
     return {"shelter": public_shelter(row)}
 
 
-# TODO(Backend): the staff dashboard has no auth yet. Before real use, require the
-# shelter's tag secret (?k=) or similar so worker names aren't visible to anyone.
 @bp.get("/api/shelters/<shelter_id>/holds")
+@require_staff
 def shelter_holds(shelter_id):
     with transaction() as conn:
         rows = conn.execute(
@@ -42,12 +43,8 @@ def shelter_holds(shelter_id):
 
 
 @bp.get("/api/shelters/<shelter_id>/events")
+@require_staff
 def shelter_events(shelter_id):
     limit = min(max(request.args.get("limit", 20, type=int), 1), 100)
     with transaction() as conn:
-        rows = conn.execute(
-            "SELECT time, delta, open_beds_after, source FROM availability_events"
-            " WHERE shelter_id = %s ORDER BY time DESC LIMIT %s",
-            (shelter_id, limit),
-        ).fetchall()
-    return {"events": [{**r, "time": iso(r["time"])} for r in rows]}
+        return {"events": load_events(conn, shelter_id, limit)}

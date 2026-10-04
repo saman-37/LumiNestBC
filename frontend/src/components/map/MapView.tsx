@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLng } from '../../lib/geo'
 import type { Shelter } from '../../lib/types'
+import { clusterShelters, type Cluster } from '../../lib/cluster'
 import { BaseMap } from './BaseMap'
+import { ClusterMarker } from './ClusterMarker'
 import { ShelterMarker } from './ShelterMarker'
 
 
@@ -127,8 +129,84 @@ function Controller({ shelters, visibleIds, selectedId, origin, originKey, inset
   return null
 }
 
+/**
+ * Shelter lights. Below SELECT_ZOOM, pins that would overlap merge into a cluster light showing
+ * their total beds; tapping one zooms in until they separate. The selected shelter and pins
+ * hidden by filters are never clustered.
+ */
+function Lights({ markers, visibleIds, selectedId, bumped, distances, touch, insets, hoverId, onSelect, onHover }: Props & {
+  markers: Shelter[]
+  hoverId: string | null
+  onHover: (id: string | null) => void
+}) {
+  const map = useMap()
+  const reduce = useReducedMotion() ?? false
+  const [zoom, setZoom] = useState(() => map.getZoom())
+  // One listener for the map's lifetime (useMapEvents re-binds on every render, and a fit made by
+  // Controller in the same commit would slip through the gap), plus a sync for fits made before it.
+  // 'zoom' fires before 'zoomend', whose vector-tile handler can throw when WebGL is unavailable.
+  useEffect(() => {
+    const sync = () => setZoom(Math.round(map.getZoom()))
+    sync()
+    map.on('zoom zoomend moveend', sync)
+    return () => {
+      map.off('zoom zoomend moveend', sync)
+    }
+  }, [map])
+  useEffect(() => setZoom(Math.round(map.getZoom())), [map, markers])
+
+  const clusters = useMemo(() => {
+    if (zoom >= SELECT_ZOOM) return []
+    const pool = markers.filter((s) => visibleIds.has(s.id) && s.id !== selectedId)
+    return clusterShelters(map, pool, zoom).filter((c) => c.members.length > 1)
+  }, [map, markers, visibleIds, selectedId, zoom])
+  const clustered = new Set(clusters.flatMap((c) => c.members.map((s) => s.id)))
+
+  function zoomInto(cluster: Cluster) {
+    const bounds = latLngBounds(cluster.members.map((s) => [s.lat!, s.lng!] as [number, number]))
+    map.flyToBounds(bounds, {
+      paddingTopLeft: [insets.left + 64, insets.top + 64],
+      paddingBottomRight: [64, insets.bottom + 64],
+      maxZoom: SELECT_ZOOM,
+      animate: !reduce,
+      duration: 0.8,
+    })
+  }
+
+  return (
+    <>
+      {markers.map((s) =>
+        clustered.has(s.id) ? null : (
+          <ShelterMarker
+            key={s.id}
+            shelter={s}
+            hidden={!visibleIds.has(s.id)}
+            dimmed={selectedId !== null}
+            selected={s.id === selectedId}
+            bumped={bumped.has(s.id)}
+            km={distances.get(s.id) ?? null}
+            showTip={hoverId === s.id || (touch && s.id === selectedId)}
+            compactTip={touch}
+            onSelect={onSelect}
+            onHover={onHover}
+          />
+        ),
+      )}
+      {clusters.map((c) => (
+        <ClusterMarker
+          key={c.key}
+          cluster={c}
+          dimmed={selectedId !== null}
+          bumped={c.members.some((s) => bumped.has(s.id))}
+          onZoom={zoomInto}
+        />
+      ))}
+    </>
+  )
+}
+
 export function MapView(props: Props) {
-  const { shelters, visibleIds, selectedId, bumped, origin, distances, touch, mapRef, onSelect, onAttribution } = props
+  const { shelters, origin, touch, mapRef, onAttribution } = props
   const markers = useMemo(() => shelters.filter((s) => s.lat !== null && s.lng !== null), [shelters])
 
   // Hover place card: appears after a short delay, hides immediately on leave.
@@ -153,21 +231,7 @@ export function MapView(props: Props) {
       <BaseMap onAttribution={onAttribution} />
       <Controller {...props} />
       <Marker position={[origin.lat, origin.lng]} icon={youIcon} interactive={false} keyboard={false} title="You are here" />
-      {markers.map((s) => (
-        <ShelterMarker
-          key={s.id}
-          shelter={s}
-          hidden={!visibleIds.has(s.id)}
-          dimmed={selectedId !== null}
-          selected={s.id === selectedId}
-          bumped={bumped.has(s.id)}
-          km={distances.get(s.id) ?? null}
-          showTip={hoverId === s.id || (touch && s.id === selectedId)}
-          compactTip={touch}
-          onSelect={onSelect}
-          onHover={onHover}
-        />
-      ))}
+      <Lights {...props} markers={markers} hoverId={hoverId} onHover={onHover} />
     </MapContainer>
   )
 }

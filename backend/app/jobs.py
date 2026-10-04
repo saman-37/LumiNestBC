@@ -7,6 +7,7 @@ import logging
 
 from . import config
 from .availability import change_beds
+from .comms.voice import prewarm_fixed_phrases
 from .db import transaction
 from .sockets import emit_shelter_update, socketio
 
@@ -49,6 +50,14 @@ def nudge_stale_shelters() -> None:
     log.info("stale nudge (stub): %d shelter(s) would be texted", len(stale))
 
 
+def _prewarm_voice() -> None:
+    """Generate the fixed voice-line phrases once at startup; calls fall back to <Say> if this fails."""
+    try:
+        prewarm_fixed_phrases()
+    except Exception:  # never block startup on text-to-speech
+        log.exception("voice prewarm failed; calls will use <Say> until audio is generated")
+
+
 def _every(seconds: int, fn) -> None:
     while True:
         try:
@@ -64,5 +73,6 @@ def start_jobs() -> None:
         return
     _started = True
     socketio.start_background_task(_every, config.EXPIRE_HOLDS_INTERVAL_SECONDS, expire_holds)
+    socketio.start_background_task(_prewarm_voice)
     if config.SMS_NUDGE_ENABLED:
         socketio.start_background_task(_every, config.STALE_NUDGE_INTERVAL_SECONDS, nudge_stale_shelters)

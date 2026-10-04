@@ -22,6 +22,7 @@ export function matchesFilters(shelter: Shelter, active: Set<FilterKey>): boolea
 export type ShelterState = 'open' | 'open-one' | 'full' | 'stale'
 
 export function shelterState(s: Shelter): ShelterState {
+  if (!s.accepting) return 'full' // staff turned off "accepting new people" tonight
   if (s.freshness === 'red') return 'stale'
   if (s.is_full || s.open_beds < 1) return 'full'
   return s.open_beds >= 2 ? 'open' : 'open-one'
@@ -34,7 +35,7 @@ export function isOpen(s: Shelter): boolean {
 
 /** At least one open bed reported (stale counts included; they show as "unconfirmed"). */
 export function hasBeds(s: Shelter): boolean {
-  return s.open_beds > 0 && !s.is_full
+  return s.open_beds > 0 && !s.is_full && s.accepting
 }
 
 export function bedsWord(n: number): string {

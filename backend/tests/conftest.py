@@ -11,6 +11,7 @@ import pytest
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from app import config
+from app.auth import hash_key, limiter
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL", "postgresql://luminest:luminest@localhost:5432/luminestbc_test"
@@ -32,6 +33,16 @@ def _ensure_database() -> None:
         conn.execute(SCHEMA.read_text())
 
 
+@pytest.fixture(autouse=True)
+def no_paid_apis(monkeypatch):
+    """Tests never call ElevenLabs or Gemini, whatever keys are in .env."""
+    from app.comms import voice
+
+    monkeypatch.setattr(config, "ELEVENLABS_API_KEY", "")
+    monkeypatch.setattr(config, "GEMINI_API_KEY", "")
+    voice.clear_audio_cache()
+
+
 @pytest.fixture(scope="session")
 def app():
     _ensure_database()
@@ -44,7 +55,8 @@ def app():
 def db(app):
     """A fresh, empty database for each test. Yields an autocommit connection."""
     with psycopg.connect(TEST_DATABASE_URL, autocommit=True, row_factory=psycopg.rows.dict_row) as conn:
-        conn.execute("TRUNCATE availability_events, processed_taps, holds, tags, shelters CASCADE")
+        conn.execute("TRUNCATE availability_events, processed_taps, holds, tags, staff_keys, shelters CASCADE")
+        limiter.reset()
         yield conn
 
 
@@ -84,3 +96,11 @@ def rewind_tag(db, shelter_id="shelter-01", action="freed", seconds=None):
         " WHERE shelter_id = %s AND action = %s",
         (seconds, shelter_id, action),
     )
+
+
+STAFF_KEY = "staff-key-for-tests-0123456789abcdef"
+
+
+def add_staff_key(db, shelter_id="shelter-01", key=STAFF_KEY):
+    db.execute("INSERT INTO staff_keys (shelter_id, key_hash) VALUES (%s, %s)", (shelter_id, hash_key(key)))
+    return {"X-Staff-Key": key}
